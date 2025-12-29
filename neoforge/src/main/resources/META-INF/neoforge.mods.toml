@@ -44,7 +44,7 @@ side = "BOTH"
 [[dependencies.cobblewarden_boss]]
 modId = "cobblemon_fight_or_flight_reborn"
 type = "required"
-versionRange = "[0.10.2,)"
+versionRange = "*"
 ordering = "AFTER"
 side = "BOTH"
 
