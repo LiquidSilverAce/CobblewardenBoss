@@ -42,9 +42,9 @@ ordering = "AFTER"
 side = "BOTH"
 
 [[dependencies.cobblewarden_boss]]
-modId = "cobblemon_fight_or_flight_reborn"
+modId = "fightorflight"
 type = "required"
-versionRange = "*"
+versionRange = "[0.10.2,)"
 ordering = "AFTER"
 side = "BOTH"
 

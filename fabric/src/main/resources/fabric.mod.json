@@ -32,7 +32,7 @@
     "architectury": ">=13.0.8",
     "fabric-api": "*",
     "cobblemon": ">=1.7.1",
-    "cobblemon_fight_or_flight_reborn": "*"
+    "fightorflight": ">=0.10.2"
   },
   "suggests": {
     "another-mod": "*"
