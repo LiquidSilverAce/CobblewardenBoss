@@ -11,7 +11,7 @@ public class WardenSpawnInterceptor {
         // Register entity spawn event listener
         EntityEvent.ADD.register((entity, level) -> {
             // Check if the entity being added is a Warden
-            if (entity instanceof Warden) {
+            if (entity instanceof Warden warden) {
                 CobblewardenBoss.LOGGER.info("Warden spawn detected at position: {}", entity.blockPosition());
                 
                 // Check if this location has already spawned a boss
@@ -20,11 +20,20 @@ public class WardenSpawnInterceptor {
                     return EventResult.interruptFalse(); // Cancel the spawn
                 }
                 
-                // Spawn boss Pokemon instead
-                BossSpawner.spawnBoss(level, entity.blockPosition());
-                
-                // Mark this location as having spawned
-                AncientCityTracker.markAsSpawned(level, entity.blockPosition());
+                // Schedule boss spawn for next tick to ensure it happens after event processing
+                if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    net.minecraft.core.BlockPos spawnPos = entity.blockPosition();
+                    serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                        serverLevel.getServer().getTickCount() + 1,
+                        () -> {
+                            // Spawn boss Pokemon
+                            BossSpawner.spawnBoss(serverLevel, spawnPos);
+                            
+                            // Mark this location as having spawned
+                            AncientCityTracker.markAsSpawned(serverLevel, spawnPos);
+                        }
+                    ));
+                }
                 
                 // Cancel the Warden spawn
                 return EventResult.interruptFalse();
