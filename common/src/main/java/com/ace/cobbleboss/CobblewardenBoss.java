@@ -13,6 +13,7 @@ public final class CobblewardenBoss {
         // Register event listeners
         WardenSpawnInterceptor.register();
         BossDefeatHandler.register();
+        PortalAnimator.register();
         
         LOGGER.info("Cobblewarden Boss mod initialized");
     }
