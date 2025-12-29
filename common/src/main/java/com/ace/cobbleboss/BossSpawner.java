@@ -1,11 +1,14 @@
 package com.ace.cobbleboss;
 
+import com.cobblemon.mod.common.api.moves.MoveTemplate;
+import com.cobblemon.mod.common.api.moves.Moves;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
+import com.cobblemon.mod.common.api.pokemon.Natures;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
+import com.cobblemon.mod.common.pokemon.Nature;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -25,26 +28,16 @@ public class BossSpawner {
         String species = determineSpecies(serverLevel, pos);
         
         try {
-            // Build Pokemon properties string
-            String propertiesString = String.format(
-                "%s level=%d uncatchable=true%s",
-                species,
-                CobblewardenConfig.BOSS_LEVEL,
-                species.equals("giratina_altered") ? " form=altered" : ""
-            );
-            
             // Create boss Pokemon with properties
-            PokemonProperties properties = PokemonProperties.Companion.parse(propertiesString);
-            
-            Pokemon pokemon = properties.create();
+            Pokemon pokemon = createBossPokemon(species);
             
             if (pokemon == null) {
                 CobblewardenBoss.LOGGER.error("Failed to create {} boss Pokemon - species not found", species);
                 return;
             }
             
-            // Configure boss stats
-            configureBossStats(pokemon);
+            // Configure boss stats, moves, and nature
+            configureBossStats(pokemon, species);
             
             // Create Pokemon entity
             PokemonEntity pokemonEntity = new PokemonEntity(serverLevel, pokemon, null);
@@ -69,6 +62,30 @@ public class BossSpawner {
         } catch (Exception e) {
             CobblewardenBoss.LOGGER.error("Failed to spawn {} boss", species, e);
         }
+    }
+    
+    /**
+     * Create a Pokemon with the appropriate properties based on species
+     */
+    private static Pokemon createBossPokemon(String species) {
+        String propertiesString;
+        
+        // Handle Giratina with aspects
+        if (species.equals("giratina")) {
+            propertiesString = String.format(
+                "species=giratina aspects=altered level=%d uncatchable=true",
+                CobblewardenConfig.BOSS_LEVEL
+            );
+        } else {
+            propertiesString = String.format(
+                "species=%s level=%d uncatchable=true",
+                species,
+                CobblewardenConfig.BOSS_LEVEL
+            );
+        }
+        
+        PokemonProperties properties = PokemonProperties.Companion.parse(propertiesString);
+        return properties.create();
     }
     
     /**
@@ -97,7 +114,7 @@ public class BossSpawner {
         }
     }
     
-    private static void configureBossStats(Pokemon pokemon) {
+    private static void configureBossStats(Pokemon pokemon, String species) {
         // Set HP to Warden-equivalent
         pokemon.setCurrentHealth(CobblewardenConfig.BOSS_HP);
         
@@ -109,12 +126,99 @@ public class BossSpawner {
         pokemon.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_DEFENCE, 31);
         pokemon.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPEED, 31);
         
-        // Boost EVs for HP and Attack
-        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 252);
-        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 252);
-        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 6);
+        // Set species-specific EVs, moves, and nature
+        switch (species) {
+            case "giratina":
+                configureGiratina(pokemon);
+                break;
+            case "exploud":
+                configureExploud(pokemon);
+                break;
+            case "guzzlord":
+                configureGuzzlord(pokemon);
+                break;
+            default:
+                // Default EVs for unknown species
+                pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 252);
+                pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 252);
+                pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 6);
+                break;
+        }
         
         CobblewardenBoss.LOGGER.debug("Configured boss with Level: {}, HP: {}", pokemon.getLevel(), CobblewardenConfig.BOSS_HP);
+    }
+    
+    /**
+     * Configure Giratina with Mild nature, Sp ATK and ATK EVs, and specific moves
+     */
+    private static void configureGiratina(Pokemon pokemon) {
+        // Set EVs: Full Sp ATK and ATK
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 252);
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 252);
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 6);
+        
+        // Set Nature: Mild (+Sp ATK, -Def)
+        Nature mild = Natures.INSTANCE.getNature("mild");
+        if (mild != null) {
+            pokemon.setNature(mild);
+        }
+        
+        // Set Moves: shadowforce, dragonclaw, shadowball, earthpower
+        setMoves(pokemon, "shadowforce", "dragonclaw", "shadowball", "earthpower");
+    }
+    
+    /**
+     * Configure Exploud with Rash nature, Sp ATK and ATK EVs, and specific moves
+     */
+    private static void configureExploud(Pokemon pokemon) {
+        // Set EVs: Full Sp ATK and ATK
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 252);
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 252);
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 6);
+        
+        // Set Nature: Rash (+Sp ATK, -Sp Def)
+        Nature rash = Natures.INSTANCE.getNature("rash");
+        if (rash != null) {
+            pokemon.setNature(rash);
+        }
+        
+        // Set Moves: crunch, boomburst, roar, supersonic (crunch first for Fight or Flight)
+        setMoves(pokemon, "crunch", "boomburst", "roar", "supersonic");
+    }
+    
+    /**
+     * Configure Guzzlord with Adamant nature, ATK and HP EVs, and specific moves
+     */
+    private static void configureGuzzlord(Pokemon pokemon) {
+        // Set EVs: Full ATK and HP
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 252);
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 252);
+        pokemon.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 6);
+        
+        // Set Nature: Adamant (+ATK, -Sp ATK)
+        Nature adamant = Natures.INSTANCE.getNature("adamant");
+        if (adamant != null) {
+            pokemon.setNature(adamant);
+        }
+        
+        // Set Moves: crunch, belch, dragonrush, hammerarm
+        setMoves(pokemon, "crunch", "belch", "dragonrush", "hammerarm");
+    }
+    
+    /**
+     * Helper method to set moves on a Pokemon
+     */
+    private static void setMoves(Pokemon pokemon, String... moveNames) {
+        pokemon.getMoveSet().clear();
+        
+        for (int i = 0; i < moveNames.length && i < 4; i++) {
+            MoveTemplate move = Moves.INSTANCE.getByName(moveNames[i]);
+            if (move != null) {
+                pokemon.getMoveSet().add(move.create());
+            } else {
+                CobblewardenBoss.LOGGER.warn("Move {} not found", moveNames[i]);
+            }
+        }
     }
     
     private static void configureBossEntity(PokemonEntity entity) {

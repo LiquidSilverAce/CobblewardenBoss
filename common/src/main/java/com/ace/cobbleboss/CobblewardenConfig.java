@@ -20,14 +20,14 @@ public class CobblewardenConfig {
     
     /**
      * The species to spawn in Ancient Cities.
-     * Options: "guzzlord", "giratina_altered", "exploud"
-     * Default: "giratina_altered"
+     * Options: "guzzlord", "giratina", "exploud"
+     * Default: "giratina"
      */
-    public static final String ANCIENT_CITY_SPECIES = "giratina_altered";
+    public static final String ANCIENT_CITY_SPECIES = "giratina";
     
     /**
      * The species to spawn outside Ancient Cities (overworld).
-     * Options: "guzzlord", "giratina_altered", "exploud"
+     * Options: "guzzlord", "giratina", "exploud"
      * Default: "exploud"
      */
     public static final String OVERWORLD_SPECIES = "exploud";

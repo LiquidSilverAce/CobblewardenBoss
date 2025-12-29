@@ -13,7 +13,7 @@ A Minecraft mod for Cobbleverse 1.7.1-CF (Minecraft 1.21.1) that replaces the va
 ### Location-Based Spawning
 - **Ancient Cities (Deep Dark biome)**: Spawns Giratina (Altered Forme) by default
 - **Overworld**: Spawns Exploud by default
-- Fully configurable - choose between Guzzlord, Giratina (Altered), or Exploud for each location
+- Fully configurable - choose between Guzzlord, Giratina, or Exploud for each location
 
 ### Boss Pokemon Configuration
 - **Aggressive Behavior**: Boss Pokemon attack players' Pokémon using Fight or Flight Reborn mechanics
@@ -48,16 +48,16 @@ Edit the constants in `CobblewardenConfig.java` to customize:
 |---------|---------|-------------|
 | `BOSS_HP` | 500 | The HP that the boss Pokemon should have (same as Warden) |
 | `BOSS_LEVEL` | 100 | The level that the boss Pokemon spawns at |
-| `ANCIENT_CITY_SPECIES` | "giratina_altered" | Species to spawn in Ancient Cities |
+| `ANCIENT_CITY_SPECIES` | "giratina" | Species to spawn in Ancient Cities |
 | `OVERWORLD_SPECIES` | "exploud" | Species to spawn outside Ancient Cities |
 | `ANCIENT_CITY_REGION_SIZE` | 128 | Region size in blocks for spawn tracking |
 | `PREVENT_NORMAL_BATTLE` | true | Whether to prevent normal Pokemon battles (Fight or Flight only) |
 | `DEBUG_MODE` | false | Whether to show debug log messages |
 
 ### Available Species
-- `"guzzlord"` - The Ultra Beast with massive bulk
-- `"giratina_altered"` - The Renegade Pokemon in its Altered Forme
-- `"exploud"` - The Loud Noise Pokemon
+- `"guzzlord"`
+- `"giratina"`
+- `"exploud"`
 
 ## Dependencies
 
@@ -126,8 +126,8 @@ Edit the constants in `CobblewardenConfig.java` to customize:
 ## Building from Source
 
 ### Prerequisites
-- JDK 21 or higher
-- Gradle 8.5 or higher (or use the wrapper)
+- Java 21 (required for Minecraft 1.21.1 and Cobblemon)
+- Gradle 8.11+ (included via wrapper)
 
 ### Build Commands
 ```bash
@@ -150,17 +150,12 @@ Build artifacts will be located in:
 ### Minecraft Version
 - 1.21.1
 
-### Cobblemon Version
-- 1.7.1-CF (Cobbleverse)
+### Cobbleverse Version
+- 1.7.1-CF (includes Cobblemon and Architectury)
 
 ### Platform Support
 - ✅ Fabric
 - ✅ NeoForge
-
-## Known Issues
-
-- Gradle wrapper setup requires manual configuration due to repository access
-- See BUILDING.md for build instructions
 
 ## License
 
