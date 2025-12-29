@@ -28,10 +28,9 @@ public class GuzzlordDefeatHandler {
     }
     
     private static void handleGuzzlordDefeat(LivingEntity entity) {
-        // Clear drops - Guzzlord should not drop any items
         if (entity instanceof PokemonEntity pokemonEntity) {
-            // The entity will be removed by the death event
-            // No loot drops needed - vanilla behavior already handles this
+            // Entity will be removed by the death event
+            // Loot drops are prevented by the LivingEntityMixin
             
             CobblewardenBoss.LOGGER.info("Guzzlord boss will despawn without dropping loot");
         }

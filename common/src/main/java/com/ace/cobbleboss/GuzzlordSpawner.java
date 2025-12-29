@@ -91,9 +91,9 @@ public class GuzzlordSpawner {
         entity.setCustomName(net.minecraft.network.chat.Component.literal(CobblewardenConfig.BOSS_NAME_FORMATTED));
         entity.setCustomNameVisible(true);
         
-        // Set as invulnerable to non-battle damage (like fall damage, fire, etc.)
-        // Players must defeat it in battle
-        entity.setInvulnerable(false); // Keep vulnerable to allow defeat
+        // Keep entity vulnerable to damage so it can be defeated
+        // The LivingEntityMixin will prevent loot drops
+        entity.setInvulnerable(false);
         
         CobblewardenBoss.LOGGER.debug("Configured Guzzlord entity behavior");
     }
