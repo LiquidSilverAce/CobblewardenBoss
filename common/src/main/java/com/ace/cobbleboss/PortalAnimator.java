@@ -149,7 +149,7 @@ public class PortalAnimator {
                     BlockPos checkPos = pos.offset(x, y, z);
                     BlockState state = level.getBlockState(checkPos);
                     
-                    if (state.is(Blocks.LAVA) || state.is(Blocks.FLOWING_LAVA)) {
+                    if (state.is(Blocks.LAVA)) {
                         lavaBlocks++;
                     } else if (state.isAir()) {
                         airBlocks++;
