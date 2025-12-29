@@ -55,25 +55,25 @@ public class BossSpawner {
         switch (species) {
             case "giratina":
                 command = String.format(
-                    "pokespawnat giratina level=100 nature=mild special_attack_ev=252 attack_ev=252 special_attack_iv=31 attack_iv=31 uncatchable=true %d %d %d",
+                    "pokespawnat giratina %d %d %d level=100 nature=mild special_attack_ev=252 attack_ev=252 special_attack_iv=31 attack_iv=31 uncatchable=true",
                     spawnX, spawnY, spawnZ
                 );
                 break;
             case "exploud":
                 command = String.format(
-                    "pokespawnat exploud level=100 nature=rash special_attack_ev=252 attack_ev=252 special_attack_iv=31 attack_iv=31 uncatchable=true %d %d %d",
+                    "pokespawnat exploud %d %d %d level=100 nature=rash special_attack_ev=252 attack_ev=252 special_attack_iv=31 attack_iv=31 uncatchable=true",
                     spawnX, spawnY, spawnZ
                 );
                 break;
             case "guzzlord":
                 command = String.format(
-                    "pokespawnat guzzlord level=100 nature=adamant attack_ev=252 hp_ev=252 attack_iv=31 hp_iv=31 uncatchable=true %d %d %d",
+                    "pokespawnat guzzlord %d %d %d level=100 nature=adamant attack_ev=252 hp_ev=252 attack_iv=31 hp_iv=31 uncatchable=true",
                     spawnX, spawnY, spawnZ
                 );
                 break;
             default:
                 command = String.format(
-                    "pokespawnat %s level=100 uncatchable=true %d %d %d",
+                    "pokespawnat %s %d %d %d level=100 uncatchable=true",
                     species, spawnX, spawnY, spawnZ
                 );
                 break;

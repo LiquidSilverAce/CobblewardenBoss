@@ -94,14 +94,19 @@ public class PortalAnimator {
     
     /**
      * Find a safe 10x10 area near the trigger position
+     * Searches within a 20 block radius
      */
     private static BlockPos findSafeLocation(ServerLevel level, BlockPos triggerPos) {
-        // Try positions in a radius around the trigger point
-        int[] offsets = {10, -10, 15, -15, 5, -5};
-        
-        for (int xOffset : offsets) {
-            for (int zOffset : offsets) {
-                BlockPos candidate = triggerPos.offset(xOffset, 0, zOffset);
+        // Try positions in concentric circles up to 20 blocks away
+        for (int radius = 10; radius <= 20; radius += 5) {
+            // Check 8 directions at each radius
+            int[][] directions = {
+                {radius, 0}, {-radius, 0}, {0, radius}, {0, -radius},
+                {radius, radius}, {radius, -radius}, {-radius, radius}, {-radius, -radius}
+            };
+            
+            for (int[] dir : directions) {
+                BlockPos candidate = triggerPos.offset(dir[0], 0, dir[1]);
                 
                 // Find ground level
                 BlockPos groundPos = findGroundLevel(level, candidate);
@@ -111,7 +116,7 @@ public class PortalAnimator {
             }
         }
         
-        return null; // No safe location found
+        return null; // No safe location found within 20 blocks
     }
     
     /**
@@ -132,12 +137,14 @@ public class PortalAnimator {
     
     /**
      * Check if a 10x10 area is safe for portal placement
+     * Validates at least 10x10 horizontal area with adequate height clearance
      */
     private static boolean isSafeForPortal(ServerLevel level, BlockPos pos) {
-        // Check 10x10 area for air blocks
+        // Check 10x10 horizontal area (5 blocks in each direction from center)
+        // Need at least 10 blocks of vertical clearance for the portal frame
         for (int x = -5; x <= 5; x++) {
             for (int z = -5; z <= 5; z++) {
-                for (int y = 0; y < 5; y++) {
+                for (int y = 0; y < 10; y++) {
                     BlockPos checkPos = pos.offset(x, y, z);
                     if (!level.getBlockState(checkPos).isAir()) {
                         return false;
