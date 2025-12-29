@@ -118,8 +118,9 @@ public class PortalAnimator {
      * Find the ground level at the given X/Z position
      */
     private static BlockPos findGroundLevel(ServerLevel level, BlockPos pos) {
-        // Start from trigger Y and search down
-        for (int y = pos.getY(); y > level.getMinY(); y--) {
+        // Start from trigger Y and search down (max 30 blocks)
+        int searchLimit = Math.max(level.getMinY(), pos.getY() - 30);
+        for (int y = pos.getY(); y > searchLimit; y--) {
             BlockPos checkPos = new BlockPos(pos.getX(), y, pos.getZ());
             if (!level.getBlockState(checkPos).isAir() && 
                 level.getBlockState(checkPos.above()).isAir()) {
