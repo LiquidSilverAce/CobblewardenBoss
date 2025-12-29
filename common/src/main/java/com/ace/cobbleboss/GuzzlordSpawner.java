@@ -84,8 +84,11 @@ public class GuzzlordSpawner {
         // The Fight or Flight Reborn mod should automatically make this Pokemon aggressive
         // when it encounters players, so no additional configuration is needed
         
+        // Mark as boss using NBT tag
+        GuzzlordBossUtil.markAsBoss(entity);
+        
         // Set custom name to indicate this is a boss
-        entity.setCustomName(net.minecraft.network.chat.Component.literal("§4Guzzlord Boss§r"));
+        entity.setCustomName(net.minecraft.network.chat.Component.literal(CobblewardenConfig.BOSS_NAME_FORMATTED));
         entity.setCustomNameVisible(true);
         
         // Set as invulnerable to non-battle damage (like fall damage, fire, etc.)

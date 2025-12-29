@@ -10,8 +10,8 @@ public class GuzzlordDefeatHandler {
     public static void register() {
         // Register entity death event listener
         EntityEvent.LIVING_DEATH.register((entity, damageSource) -> {
-            // Check if the entity is a Guzzlord boss
-            if (isGuzzlordBoss(entity)) {
+            // Check if the entity is a Guzzlord boss using utility method
+            if (GuzzlordBossUtil.isBoss(entity)) {
                 CobblewardenBoss.LOGGER.info("Guzzlord boss defeated at position: {}", entity.blockPosition());
                 
                 // Handle defeat behavior
@@ -25,17 +25,6 @@ public class GuzzlordDefeatHandler {
         });
         
         CobblewardenBoss.LOGGER.info("Guzzlord defeat handler registered");
-    }
-    
-    private static boolean isGuzzlordBoss(LivingEntity entity) {
-        if (!(entity instanceof PokemonEntity pokemonEntity)) {
-            return false;
-        }
-        
-        // Check if it's a Guzzlord with our custom boss name
-        String customName = entity.getCustomName() != null ? entity.getCustomName().getString() : "";
-        return customName.contains("Guzzlord Boss") && 
-               pokemonEntity.getPokemon().getSpecies().getName().equalsIgnoreCase("guzzlord");
     }
     
     private static void handleGuzzlordDefeat(LivingEntity entity) {

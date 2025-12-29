@@ -1,6 +1,6 @@
 package com.ace.cobbleboss.mixin;
 
-import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
+import com.ace.cobbleboss.GuzzlordBossUtil;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,13 +18,10 @@ public class LivingEntityMixin {
     private void preventGuzzlordLootDrop(DamageSource damageSource, CallbackInfo ci) {
         LivingEntity entity = (LivingEntity) (Object) this;
         
-        // Check if this is a Guzzlord boss
-        if (entity instanceof PokemonEntity pokemonEntity) {
-            String customName = entity.getCustomName() != null ? entity.getCustomName().getString() : "";
-            if (customName.contains("Guzzlord Boss")) {
-                // Cancel the loot drop
-                ci.cancel();
-            }
+        // Check if this is a Guzzlord boss using utility method
+        if (GuzzlordBossUtil.isBoss(entity)) {
+            // Cancel the loot drop
+            ci.cancel();
         }
     }
 }

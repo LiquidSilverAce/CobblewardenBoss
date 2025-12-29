@@ -30,4 +30,16 @@ public class CobblewardenConfig {
      * Default: false
      */
     public static final boolean DEBUG_MODE = false;
+    
+    /**
+     * The formatted display name for the Guzzlord boss.
+     * Uses Minecraft formatting codes (§).
+     */
+    public static final String BOSS_NAME_FORMATTED = "§4Guzzlord Boss§r";
+    
+    /**
+     * The plain text name for the Guzzlord boss (without formatting codes).
+     * Used for identification purposes.
+     */
+    public static final String BOSS_NAME_PLAIN = "Guzzlord Boss";
 }
