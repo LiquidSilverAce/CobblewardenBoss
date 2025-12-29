@@ -6,13 +6,9 @@ import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 
 public class GuzzlordSpawner {
-    
-    private static final int GUZZLORD_HP = 500;
-    private static final String GUZZLORD_SPECIES = "guzzlord";
     
     public static void spawnGuzzlord(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel serverLevel)) {
@@ -21,8 +17,12 @@ public class GuzzlordSpawner {
         }
         
         try {
-            // Create Guzzlord Pokemon
-            Pokemon guzzlord = PokemonSpecies.INSTANCE.getByName(GUZZLORD_SPECIES).create(75);
+            // Create Guzzlord Pokemon with properties
+            PokemonProperties properties = PokemonProperties.Companion.parse(
+                "guzzlord level=" + CobblewardenConfig.GUZZLORD_LEVEL + " uncatchable=true"
+            );
+            
+            Pokemon guzzlord = properties.create();
             
             if (guzzlord == null) {
                 CobblewardenBoss.LOGGER.error("Failed to create Guzzlord Pokemon - species not found");
@@ -35,12 +35,12 @@ public class GuzzlordSpawner {
             // Create Pokemon entity
             PokemonEntity guzzlordEntity = new PokemonEntity(serverLevel, guzzlord, null);
             
-            // Set position
+            // Set position (slightly above ground to prevent spawning in blocks)
             guzzlordEntity.moveTo(
                 pos.getX() + 0.5, 
                 pos.getY() + 1.0, 
                 pos.getZ() + 0.5, 
-                0.0F, 
+                serverLevel.getRandom().nextFloat() * 360F, 
                 0.0F
             );
             
@@ -50,7 +50,7 @@ public class GuzzlordSpawner {
             // Spawn the entity
             serverLevel.addFreshEntity(guzzlordEntity);
             
-            CobblewardenBoss.LOGGER.info("Successfully spawned Guzzlord at position: {}", pos);
+            CobblewardenBoss.LOGGER.info("Successfully spawned Guzzlord boss at position: {}", pos);
             
         } catch (Exception e) {
             CobblewardenBoss.LOGGER.error("Failed to spawn Guzzlord", e);
@@ -58,18 +58,23 @@ public class GuzzlordSpawner {
     }
     
     private static void configureGuzzlordStats(Pokemon guzzlord) {
-        // Set HP to Warden-equivalent (500 HP)
-        guzzlord.setCurrentHealth(GUZZLORD_HP);
-        guzzlord.setMaxHealth(GUZZLORD_HP);
+        // Set HP to Warden-equivalent
+        guzzlord.setCurrentHealth(CobblewardenConfig.GUZZLORD_HP);
         
-        // Boost attack stats to match Warden's devastating attacks
-        // This will be handled by Cobblemon's stat system
-        guzzlord.setLevel(75); // High level for strong stats
+        // Boost IVs to maximum for stronger stats
+        guzzlord.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 31);
+        guzzlord.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 31);
+        guzzlord.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.DEFENCE, 31);
+        guzzlord.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 31);
+        guzzlord.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_DEFENCE, 31);
+        guzzlord.getIvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPEED, 31);
         
-        // Make uncatchable by setting as wild and adding special flag
-        guzzlord.getCaughtBall().setBallType(com.cobblemon.mod.common.api.pokeball.PokeBalls.INSTANCE.getMaster());
+        // Boost EVs for HP and Attack
+        guzzlord.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.HP, 252);
+        guzzlord.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.ATTACK, 252);
+        guzzlord.getEvs().set(com.cobblemon.mod.common.api.pokemon.stats.Stats.SPECIAL_ATTACK, 6);
         
-        CobblewardenBoss.LOGGER.debug("Configured Guzzlord with HP: {}, Level: {}", GUZZLORD_HP, guzzlord.getLevel());
+        CobblewardenBoss.LOGGER.debug("Configured Guzzlord with Level: {}, HP: {}", guzzlord.getLevel(), CobblewardenConfig.GUZZLORD_HP);
     }
     
     private static void configureGuzzlordEntity(PokemonEntity entity) {
@@ -77,11 +82,15 @@ public class GuzzlordSpawner {
         entity.setPersistenceRequired();
         
         // The Fight or Flight Reborn mod should automatically make this Pokemon aggressive
-        // No additional configuration needed here as long as the mod is loaded
+        // when it encounters players, so no additional configuration is needed
         
         // Set custom name to indicate this is a boss
         entity.setCustomName(net.minecraft.network.chat.Component.literal("§4Guzzlord Boss§r"));
         entity.setCustomNameVisible(true);
+        
+        // Set as invulnerable to non-battle damage (like fall damage, fire, etc.)
+        // Players must defeat it in battle
+        entity.setInvulnerable(false); // Keep vulnerable to allow defeat
         
         CobblewardenBoss.LOGGER.debug("Configured Guzzlord entity behavior");
     }

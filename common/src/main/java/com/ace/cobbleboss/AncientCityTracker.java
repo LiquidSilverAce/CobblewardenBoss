@@ -71,13 +71,13 @@ public class AncientCityTracker extends SavedData {
     
     /**
      * Generate a unique key for an Ancient City based on its approximate location.
-     * We use chunk coordinates divided by 8 to group nearby spawns into the same "city"
-     * This assumes Ancient Cities are at least 128 blocks apart.
+     * We use configurable region size to group nearby spawns into the same "city"
      */
     private static String getCityKey(BlockPos pos) {
-        int regionX = pos.getX() >> 7; // Divide by 128
-        int regionZ = pos.getZ() >> 7; // Divide by 128
-        int regionY = pos.getY() >> 6; // Divide by 64 for Y coordinate
+        int regionSize = CobblewardenConfig.ANCIENT_CITY_REGION_SIZE;
+        int regionX = pos.getX() / regionSize;
+        int regionZ = pos.getZ() / regionSize;
+        int regionY = pos.getY() / (regionSize / 2); // Smaller Y regions since Ancient Cities are at specific Y levels
         return regionX + "_" + regionY + "_" + regionZ;
     }
 }
