@@ -7,9 +7,9 @@ license = "Insert License Here"
 modId = "cobblewarden_boss"
 version = "${version}"
 displayName = "Cobblewarden Boss"
-authors = "Me!"
+authors = "LiquidSilverAce"
 description = '''
-This is an example description! Tell everyone what your mod is about!
+Replaces the vanilla Warden with a powerful Guzzlord boss in Ancient Cities. Requires Cobblemon and Fight or Flight Reborn.
 '''
 #logoFile = ""
 
