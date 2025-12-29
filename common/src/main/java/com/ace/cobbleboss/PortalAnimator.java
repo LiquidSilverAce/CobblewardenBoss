@@ -72,7 +72,7 @@ public class PortalAnimator {
      * @param species The Pokemon species to spawn
      */
     public static void startPortalCreation(ServerLevel level, BlockPos triggerPos, String species) {
-        // Find a safe location ~10 blocks away
+        // Find the best location within 10-15 blocks
         BlockPos portalPos = findSafeLocation(level, triggerPos);
         if (portalPos == null) {
             CobblewardenBoss.LOGGER.warn("Could not find safe location for portal near {}, falling back to direct spawn", triggerPos);
@@ -81,6 +81,9 @@ public class PortalAnimator {
             AncientCityTracker.markAsSpawned(level, triggerPos);
             return;
         }
+        
+        // Clear terrain at the chosen location
+        clearTerrainForPortal(level, portalPos);
         
         // Calculate all frame positions
         List<BlockPos> frameBlocks = calculateFramePositions(portalPos);
@@ -93,12 +96,15 @@ public class PortalAnimator {
     }
     
     /**
-     * Find a safe 10x10 area near the trigger position
-     * Searches within a 20 block radius
+     * Find the best location for portal within 10-15 block range
+     * Prioritizes areas away from lava and with good terrain
      */
     private static BlockPos findSafeLocation(ServerLevel level, BlockPos triggerPos) {
-        // Try positions in concentric circles up to 20 blocks away
-        for (int radius = 10; radius <= 20; radius += 5) {
+        BlockPos bestLocation = null;
+        int bestScore = Integer.MIN_VALUE;
+        
+        // Search within 10-15 block radius
+        for (int radius = 10; radius <= 15; radius += 2) {
             // Check 8 directions at each radius
             int[][] directions = {
                 {radius, 0}, {-radius, 0}, {0, radius}, {0, -radius},
@@ -110,13 +116,60 @@ public class PortalAnimator {
                 
                 // Find ground level
                 BlockPos groundPos = findGroundLevel(level, candidate);
-                if (groundPos != null && isSafeForPortal(level, groundPos)) {
-                    return groundPos;
+                if (groundPos != null) {
+                    int score = scorePortalLocation(level, groundPos);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestLocation = groundPos;
+                    }
                 }
             }
         }
         
-        return null; // No safe location found within 20 blocks
+        // If we found any location (even if not ideal), use it
+        return bestLocation;
+    }
+    
+    /**
+     * Score a potential portal location
+     * Higher score = better location
+     * Avoids lava and prefers clear areas
+     */
+    private static int scorePortalLocation(ServerLevel level, BlockPos pos) {
+        int score = 0;
+        
+        // Check 10x10 horizontal area with 10 blocks vertical clearance
+        int lavaBlocks = 0;
+        int airBlocks = 0;
+        int solidBlocks = 0;
+        
+        for (int x = -5; x <= 5; x++) {
+            for (int z = -5; z <= 5; z++) {
+                for (int y = 0; y < 10; y++) {
+                    BlockPos checkPos = pos.offset(x, y, z);
+                    BlockState state = level.getBlockState(checkPos);
+                    
+                    if (state.is(Blocks.LAVA) || state.is(Blocks.FLOWING_LAVA)) {
+                        lavaBlocks++;
+                    } else if (state.isAir()) {
+                        airBlocks++;
+                    } else {
+                        solidBlocks++;
+                    }
+                }
+            }
+        }
+        
+        // Heavily penalize lava (avoid at all costs)
+        score -= lavaBlocks * 1000;
+        
+        // Prefer areas with more air (less clearing needed)
+        score += airBlocks * 10;
+        
+        // Slightly prefer areas that need some clearing (more stable ground)
+        score += Math.min(solidBlocks, 50);
+        
+        return score;
     }
     
     /**
@@ -136,23 +189,28 @@ public class PortalAnimator {
     }
     
     /**
-     * Check if a 10x10 area is safe for portal placement
-     * Validates at least 10x10 horizontal area with adequate height clearance
+     * Clear terrain for portal placement
+     * Destroys all blocks in the 10x10x10 area needed for the portal
+     * Avoids destroying bedrock or other indestructible blocks
      */
-    private static boolean isSafeForPortal(ServerLevel level, BlockPos pos) {
-        // Check 10x10 horizontal area (5 blocks in each direction from center)
-        // Need at least 10 blocks of vertical clearance for the portal frame
+    private static void clearTerrainForPortal(ServerLevel level, BlockPos pos) {
+        CobblewardenBoss.LOGGER.info("Clearing terrain for portal at {}", pos);
+        
+        // Clear 10x10 horizontal area (5 blocks in each direction from center)
+        // with 10 blocks of vertical clearance for the portal frame
         for (int x = -5; x <= 5; x++) {
             for (int z = -5; z <= 5; z++) {
                 for (int y = 0; y < 10; y++) {
                     BlockPos checkPos = pos.offset(x, y, z);
-                    if (!level.getBlockState(checkPos).isAir()) {
-                        return false;
+                    BlockState state = level.getBlockState(checkPos);
+                    
+                    // Don't destroy bedrock or other indestructible blocks
+                    if (!state.isAir() && state.getDestroySpeed(level, checkPos) >= 0) {
+                        level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
                     }
                 }
             }
         }
-        return true;
     }
     
     /**
@@ -239,11 +297,13 @@ public class PortalAnimator {
     }
     
     /**
-     * Spawn the boss Pokemon at the portal center
+     * Spawn the boss Pokemon inside the portal center
      */
     private static void spawnBossAtPortal(PortalInstance portal) {
-        CobblewardenBoss.LOGGER.info("Spawning {} boss at portal center {}", portal.species, portal.centerPos);
-        BossSpawner.spawnBoss(portal.level, portal.centerPos);
+        // Spawn at portal center, slightly elevated (y+2 to be inside the portal)
+        BlockPos spawnPos = portal.centerPos.offset(0, 2, 0);
+        CobblewardenBoss.LOGGER.info("Spawning {} boss inside portal at {}", portal.species, spawnPos);
+        BossSpawner.spawnBoss(portal.level, spawnPos);
         
         // Mark location as spawned
         AncientCityTracker.markAsSpawned(portal.level, portal.centerPos);
