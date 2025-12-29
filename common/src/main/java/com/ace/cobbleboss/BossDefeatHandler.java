@@ -5,17 +5,17 @@ import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.EntityEvent;
 import net.minecraft.world.entity.LivingEntity;
 
-public class GuzzlordDefeatHandler {
+public class BossDefeatHandler {
     
     public static void register() {
         // Register entity death event listener
         EntityEvent.LIVING_DEATH.register((entity, damageSource) -> {
-            // Check if the entity is a Guzzlord boss using utility method
-            if (GuzzlordBossUtil.isBoss(entity)) {
-                CobblewardenBoss.LOGGER.info("Guzzlord boss defeated at position: {}", entity.blockPosition());
+            // Check if the entity is a boss Pokemon using utility method
+            if (BossUtil.isBoss(entity)) {
+                CobblewardenBoss.LOGGER.info("Boss Pokemon defeated at position: {}", entity.blockPosition());
                 
                 // Handle defeat behavior
-                handleGuzzlordDefeat(entity);
+                handleBossDefeat(entity);
                 
                 // Allow the death to proceed (entity will be removed)
                 return EventResult.pass();
@@ -24,15 +24,15 @@ public class GuzzlordDefeatHandler {
             return EventResult.pass();
         });
         
-        CobblewardenBoss.LOGGER.info("Guzzlord defeat handler registered");
+        CobblewardenBoss.LOGGER.info("Boss defeat handler registered");
     }
     
-    private static void handleGuzzlordDefeat(LivingEntity entity) {
+    private static void handleBossDefeat(LivingEntity entity) {
         if (entity instanceof PokemonEntity pokemonEntity) {
             // Entity will be removed by the death event
             // Loot drops are prevented by the LivingEntityMixin
             
-            CobblewardenBoss.LOGGER.info("Guzzlord boss will despawn without dropping loot");
+            CobblewardenBoss.LOGGER.info("Boss Pokemon will despawn without dropping loot");
         }
     }
 }

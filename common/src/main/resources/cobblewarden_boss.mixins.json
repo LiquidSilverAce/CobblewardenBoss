@@ -6,7 +6,8 @@
   "client": [
   ],
   "mixins": [
-    "LivingEntityMixin"
+    "LivingEntityMixin",
+    "PokemonEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

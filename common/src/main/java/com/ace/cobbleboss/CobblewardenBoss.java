@@ -12,7 +12,7 @@ public final class CobblewardenBoss {
         
         // Register event listeners
         WardenSpawnInterceptor.register();
-        GuzzlordDefeatHandler.register();
+        BossDefeatHandler.register();
         
         LOGGER.info("Cobblewarden Boss mod initialized");
     }

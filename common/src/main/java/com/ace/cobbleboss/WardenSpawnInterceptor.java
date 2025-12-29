@@ -14,16 +14,16 @@ public class WardenSpawnInterceptor {
             if (entity instanceof Warden) {
                 CobblewardenBoss.LOGGER.info("Warden spawn detected at position: {}", entity.blockPosition());
                 
-                // Check if this Ancient City has already spawned a Guzzlord
+                // Check if this location has already spawned a boss
                 if (AncientCityTracker.hasSpawned(level, entity.blockPosition())) {
-                    CobblewardenBoss.LOGGER.info("This Ancient City has already spawned a Guzzlord. Cancelling Warden spawn.");
+                    CobblewardenBoss.LOGGER.info("This location has already spawned a boss. Cancelling Warden spawn.");
                     return EventResult.interruptFalse(); // Cancel the spawn
                 }
                 
-                // Spawn Guzzlord instead
-                GuzzlordSpawner.spawnGuzzlord(level, entity.blockPosition());
+                // Spawn boss Pokemon instead
+                BossSpawner.spawnBoss(level, entity.blockPosition());
                 
-                // Mark this Ancient City as having spawned
+                // Mark this location as having spawned
                 AncientCityTracker.markAsSpawned(level, entity.blockPosition());
                 
                 // Cancel the Warden spawn

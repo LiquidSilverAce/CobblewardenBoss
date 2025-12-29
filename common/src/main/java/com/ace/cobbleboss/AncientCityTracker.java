@@ -13,17 +13,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class AncientCityTracker extends SavedData {
-    private static final String DATA_NAME = "cobblewarden_boss_ancient_cities";
-    private final Set<String> spawnedCities = new HashSet<>();
+    private static final String DATA_NAME = "cobblewarden_boss_spawn_locations";
+    private final Set<String> spawnedLocations = new HashSet<>();
     
     public AncientCityTracker() {
     }
     
     public static AncientCityTracker load(CompoundTag tag) {
         AncientCityTracker tracker = new AncientCityTracker();
-        ListTag list = tag.getList("SpawnedCities", Tag.TAG_STRING);
+        ListTag list = tag.getList("SpawnedLocations", Tag.TAG_STRING);
         for (int i = 0; i < list.size(); i++) {
-            tracker.spawnedCities.add(list.getString(i));
+            tracker.spawnedLocations.add(list.getString(i));
         }
         return tracker;
     }
@@ -31,10 +31,10 @@ public class AncientCityTracker extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag) {
         ListTag list = new ListTag();
-        for (String city : spawnedCities) {
-            list.add(net.minecraft.nbt.StringTag.valueOf(city));
+        for (String location : spawnedLocations) {
+            list.add(net.minecraft.nbt.StringTag.valueOf(location));
         }
-        tag.put("SpawnedCities", list);
+        tag.put("SpawnedLocations", list);
         return tag;
     }
     
@@ -52,8 +52,8 @@ public class AncientCityTracker extends SavedData {
         }
         
         AncientCityTracker tracker = get(serverLevel);
-        String cityKey = getCityKey(pos);
-        return tracker.spawnedCities.contains(cityKey);
+        String locationKey = getLocationKey(pos);
+        return tracker.spawnedLocations.contains(locationKey);
     }
     
     public static void markAsSpawned(Level level, BlockPos pos) {
@@ -62,22 +62,22 @@ public class AncientCityTracker extends SavedData {
         }
         
         AncientCityTracker tracker = get(serverLevel);
-        String cityKey = getCityKey(pos);
-        tracker.spawnedCities.add(cityKey);
+        String locationKey = getLocationKey(pos);
+        tracker.spawnedLocations.add(locationKey);
         tracker.setDirty();
         
-        CobblewardenBoss.LOGGER.info("Marked Ancient City at {} as having spawned Guzzlord", cityKey);
+        CobblewardenBoss.LOGGER.info("Marked location at {} as having spawned boss", locationKey);
     }
     
     /**
-     * Generate a unique key for an Ancient City based on its approximate location.
-     * We use configurable region size to group nearby spawns into the same "city"
+     * Generate a unique key for a spawn location based on its approximate coordinates.
+     * We use configurable region size to group nearby spawns into the same location.
      */
-    private static String getCityKey(BlockPos pos) {
+    private static String getLocationKey(BlockPos pos) {
         int regionSize = CobblewardenConfig.ANCIENT_CITY_REGION_SIZE;
         int regionX = pos.getX() / regionSize;
         int regionZ = pos.getZ() / regionSize;
-        int regionY = pos.getY() / (regionSize / 2); // Smaller Y regions since Ancient Cities are at specific Y levels
+        int regionY = pos.getY() / (regionSize / 2); // Smaller Y regions since spawns are at specific Y levels
         return regionX + "_" + regionY + "_" + regionZ;
     }
 }

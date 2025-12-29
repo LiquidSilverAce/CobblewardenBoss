@@ -7,16 +7,30 @@ package com.ace.cobbleboss;
 public class CobblewardenConfig {
     
     /**
-     * The HP that the Guzzlord boss should have.
+     * The HP that the boss Pokemon should have.
      * Default: 500 (same as Warden)
      */
-    public static final int GUZZLORD_HP = 500;
+    public static final int BOSS_HP = 500;
     
     /**
-     * The level that the Guzzlord boss should spawn at.
-     * Default: 75 (high level for strong stats)
+     * The level that the boss Pokemon should spawn at.
+     * Default: 100 (high level for maximum stats)
      */
-    public static final int GUZZLORD_LEVEL = 75;
+    public static final int BOSS_LEVEL = 100;
+    
+    /**
+     * The species to spawn in Ancient Cities.
+     * Options: "guzzlord", "giratina_altered", "exploud"
+     * Default: "giratina_altered"
+     */
+    public static final String ANCIENT_CITY_SPECIES = "giratina_altered";
+    
+    /**
+     * The species to spawn outside Ancient Cities (overworld).
+     * Options: "guzzlord", "giratina_altered", "exploud"
+     * Default: "exploud"
+     */
+    public static final String OVERWORLD_SPECIES = "exploud";
     
     /**
      * The region size (in blocks) used to identify unique Ancient Cities.
@@ -32,14 +46,20 @@ public class CobblewardenConfig {
     public static final boolean DEBUG_MODE = false;
     
     /**
-     * The formatted display name for the Guzzlord boss.
+     * The formatted display name for the boss.
      * Uses Minecraft formatting codes (§).
      */
-    public static final String BOSS_NAME_FORMATTED = "§4Guzzlord Boss§r";
+    public static final String BOSS_NAME_FORMATTED = "§4Warden Boss§r";
     
     /**
-     * The plain text name for the Guzzlord boss (without formatting codes).
+     * The plain text name for the boss (without formatting codes).
      * Used for identification purposes.
      */
-    public static final String BOSS_NAME_PLAIN = "Guzzlord Boss";
+    public static final String BOSS_NAME_PLAIN = "Warden Boss";
+    
+    /**
+     * Whether to prevent normal Pokemon battles (only allow Fight or Flight combat).
+     * Default: true
+     */
+    public static final boolean PREVENT_NORMAL_BATTLE = true;
 }

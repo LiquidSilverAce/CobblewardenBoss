@@ -5,15 +5,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * Utility class for identifying and tagging Guzzlord boss entities.
+ * Utility class for identifying and tagging boss Pokemon entities.
  */
-public class GuzzlordBossUtil {
+public class BossUtil {
     
     private static final String BOSS_TAG = "CobblewardenBoss";
-    private static final String GUZZLORD_SPECIES = "guzzlord";
     
     /**
-     * Mark a Pokemon entity as a Guzzlord boss using NBT tags.
+     * Mark a Pokemon entity as a boss using NBT tags.
      */
     public static void markAsBoss(PokemonEntity entity) {
         CompoundTag persistentData = entity.getPersistentData();
@@ -21,7 +20,7 @@ public class GuzzlordBossUtil {
     }
     
     /**
-     * Check if an entity is a Guzzlord boss.
+     * Check if an entity is a boss Pokemon.
      * Uses NBT tags for reliable identification.
      */
     public static boolean isBoss(LivingEntity entity) {
@@ -37,7 +36,6 @@ public class GuzzlordBossUtil {
         
         // Fallback to name check for backwards compatibility
         String customName = entity.getCustomName() != null ? entity.getCustomName().getString() : "";
-        return customName.contains(CobblewardenConfig.BOSS_NAME_PLAIN) && 
-               pokemonEntity.getPokemon().getSpecies().getName().equalsIgnoreCase(GUZZLORD_SPECIES);
+        return customName.contains(CobblewardenConfig.BOSS_NAME_PLAIN);
     }
 }
