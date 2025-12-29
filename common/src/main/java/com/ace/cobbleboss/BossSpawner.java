@@ -68,21 +68,14 @@ public class BossSpawner {
      * Create a Pokemon with the appropriate properties based on species
      */
     private static Pokemon createBossPokemon(String species) {
-        String propertiesString;
+        // Create properties string without aspects (Giratina doesn't need aspect specification)
+        String propertiesString = String.format(
+            "species=%s level=%d uncatchable=true",
+            species,
+            CobblewardenConfig.BOSS_LEVEL
+        );
         
-        // Handle Giratina with aspects
-        if (species.equals("giratina")) {
-            propertiesString = String.format(
-                "species=giratina aspects=altered level=%d uncatchable=true",
-                CobblewardenConfig.BOSS_LEVEL
-            );
-        } else {
-            propertiesString = String.format(
-                "species=%s level=%d uncatchable=true",
-                species,
-                CobblewardenConfig.BOSS_LEVEL
-            );
-        }
+        CobblewardenBoss.LOGGER.debug("Creating boss Pokemon with properties: {}", propertiesString);
         
         PokemonProperties properties = PokemonProperties.Companion.parse(propertiesString);
         return properties.create();
