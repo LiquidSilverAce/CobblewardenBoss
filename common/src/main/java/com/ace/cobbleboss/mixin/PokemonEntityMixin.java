@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PokemonEntity.class)
 public class PokemonEntityMixin {
     
-    @Inject(method = "interact", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "mobInteract", at = @At("HEAD"), cancellable = true)
     private void preventNormalBattle(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
         if (!CobblewardenConfig.PREVENT_NORMAL_BATTLE) {
             return;

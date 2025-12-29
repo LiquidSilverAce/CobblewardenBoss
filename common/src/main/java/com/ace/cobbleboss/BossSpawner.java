@@ -25,11 +25,16 @@ public class BossSpawner {
         String species = determineSpecies(serverLevel, pos);
         
         try {
-            // Create boss Pokemon with properties
-            PokemonProperties properties = PokemonProperties.Companion.parse(
-                species + " level=" + CobblewardenConfig.BOSS_LEVEL + " uncatchable=true" + 
-                (species.equals("giratina_altered") ? " form=altered" : "")
+            // Build Pokemon properties string
+            String propertiesString = String.format(
+                "%s level=%d uncatchable=true%s",
+                species,
+                CobblewardenConfig.BOSS_LEVEL,
+                species.equals("giratina_altered") ? " form=altered" : ""
             );
+            
+            // Create boss Pokemon with properties
+            PokemonProperties properties = PokemonProperties.Companion.parse(propertiesString);
             
             Pokemon pokemon = properties.create();
             
@@ -74,12 +79,14 @@ public class BossSpawner {
     private static String determineSpecies(ServerLevel level, BlockPos pos) {
         // Check if we're in an Ancient City by checking biome and Y level
         Holder<Biome> biomeHolder = level.getBiome(pos);
-        String biomeName = biomeHolder.unwrapKey()
-            .map(key -> key.location().toString())
-            .orElse("");
+        
+        // Get biome key for proper comparison
+        boolean isDeepDark = biomeHolder.unwrapKey()
+            .map(key -> key.location().getPath().equals("deep_dark"))
+            .orElse(false);
         
         // Ancient Cities are in the deep dark biome and below Y=0
-        boolean isAncientCity = biomeName.contains("deep_dark") && pos.getY() < 0;
+        boolean isAncientCity = isDeepDark && pos.getY() < 0;
         
         if (isAncientCity) {
             CobblewardenBoss.LOGGER.debug("Detected Ancient City location, spawning {}", CobblewardenConfig.ANCIENT_CITY_SPECIES);
