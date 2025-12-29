@@ -10,4 +10,10 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury:$rootProject.architectury_api_version"
+    
+    // Cobblemon dependency
+    modCompileOnly "curse.maven:cobblemon-687131:7273170"
+    
+    // Fight or Flight Reborn dependency
+    modCompileOnly "curse.maven:cobblemon-fight-or-flight-reborn-1168140:7319786"
 }
