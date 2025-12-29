@@ -150,8 +150,8 @@ Build artifacts will be located in:
 ### Minecraft Version
 - 1.21.1
 
-### Cobbleverse Version
-- 1.7.1-CF (includes Cobblemon and Architectury)
+### Cobblemon
+- 1.7.1
 
 ### Platform Support
 - ✅ Fabric
