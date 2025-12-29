@@ -1,6 +1,7 @@
 package com.ace.cobbleboss;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -19,7 +20,7 @@ public class AncientCityTracker extends SavedData {
     public AncientCityTracker() {
     }
     
-    public static AncientCityTracker load(CompoundTag tag) {
+    public static AncientCityTracker load(CompoundTag tag, HolderLookup.Provider registries) {
         AncientCityTracker tracker = new AncientCityTracker();
         ListTag list = tag.getList("SpawnedLocations", Tag.TAG_STRING);
         for (int i = 0; i < list.size(); i++) {
@@ -29,7 +30,7 @@ public class AncientCityTracker extends SavedData {
     }
     
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (String location : spawnedLocations) {
             list.add(net.minecraft.nbt.StringTag.valueOf(location));
@@ -41,7 +42,11 @@ public class AncientCityTracker extends SavedData {
     private static AncientCityTracker get(ServerLevel level) {
         DimensionDataStorage storage = level.getDataStorage();
         return storage.computeIfAbsent(
-            new SavedData.Factory<>(AncientCityTracker::new, AncientCityTracker::load),
+            new SavedData.Factory<>(
+                AncientCityTracker::new,
+                AncientCityTracker::load,
+                null
+            ),
             DATA_NAME
         );
     }

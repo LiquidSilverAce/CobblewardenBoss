@@ -1,7 +1,7 @@
 package com.ace.cobbleboss;
 
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
-import net.minecraft.nbt.CompoundTag;
+import com.cobblemon.mod.common.pokemon.Pokemon;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
@@ -9,29 +9,30 @@ import net.minecraft.world.entity.LivingEntity;
  */
 public class BossUtil {
     
-    private static final String BOSS_TAG = "CobblewardenBoss";
-    
     /**
-     * Mark a Pokemon entity as a boss using NBT tags.
+     * Mark a Pokemon entity as a boss.
+     * Uses the Pokemon's persistent data through Cobblemon API.
      */
     public static void markAsBoss(PokemonEntity entity) {
-        CompoundTag persistentData = entity.getPersistentData();
-        persistentData.putBoolean(BOSS_TAG, true);
+        Pokemon pokemon = entity.getPokemon();
+        // Store boss flag in the Pokemon's persistent data
+        pokemon.getPersistentData().putBoolean("CobblewardenBoss", true);
     }
     
     /**
      * Check if an entity is a boss Pokemon.
-     * Uses NBT tags for reliable identification.
+     * Uses Pokemon's persistent data for reliable identification.
      */
     public static boolean isBoss(LivingEntity entity) {
         if (!(entity instanceof PokemonEntity pokemonEntity)) {
             return false;
         }
         
-        // Check NBT tag first (most reliable)
-        CompoundTag persistentData = entity.getPersistentData();
-        if (persistentData.contains(BOSS_TAG)) {
-            return persistentData.getBoolean(BOSS_TAG);
+        Pokemon pokemon = pokemonEntity.getPokemon();
+        
+        // Check persistent data tag first (most reliable)
+        if (pokemon.getPersistentData().contains("CobblewardenBoss")) {
+            return pokemon.getPersistentData().getBoolean("CobblewardenBoss");
         }
         
         // Fallback to name check for backwards compatibility

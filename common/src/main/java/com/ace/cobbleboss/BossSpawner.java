@@ -233,7 +233,8 @@ public class BossSpawner {
         
         // Prevent normal battles if configured
         if (CobblewardenConfig.PREVENT_NORMAL_BATTLE) {
-            entity.getPersistentData().putBoolean("unbattleable", true);
+            // Use Pokemon's persistent data through Cobblemon API
+            entity.getPokemon().getPersistentData().putBoolean("unbattleable", true);
         }
         
         // Set custom name to indicate this is a boss
