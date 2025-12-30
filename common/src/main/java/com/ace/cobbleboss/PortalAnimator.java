@@ -262,8 +262,8 @@ public class PortalAnimator {
         if (portal.ticksElapsed <= 100) {
             // Phase 2: Build animation (ticks 0-100)
             animatePortalBuild(portal);
-        } else if (portal.ticksElapsed == 100) {
-            // Phase 3: Activate portal (tick 100)
+        } else if (portal.ticksElapsed == 101) {
+            // Phase 3: Activate portal (tick 101, right after frame completes)
             activatePortal(portal);
         } else if (portal.ticksElapsed == 160) {
             // Phase 4: Spawn boss (tick 160 = 3 seconds after completion)
@@ -278,44 +278,60 @@ public class PortalAnimator {
     }
     
     /**
-     * Animate portal building - place blocks gradually
+     * Animate portal building - place blocks gradually over 5 seconds (100 ticks)
      */
     private static void animatePortalBuild(PortalInstance portal) {
         int totalBlocks = portal.frameBlocks.size();
-        int blocksPerTick = Math.max(1, totalBlocks / 100);
         
-        int startIdx = (portal.ticksElapsed - 1) * blocksPerTick;
-        int endIdx = Math.min(startIdx + blocksPerTick, totalBlocks);
+        // Calculate which blocks to place this tick
+        // Spread all blocks evenly across 100 ticks for 5-second animation
+        int blockIndex = (int) ((portal.ticksElapsed / 100.0) * totalBlocks);
+        
+        // Place one block per tick (or more if we need to catch up)
+        int blocksToPlace = Math.max(1, totalBlocks / 100);
+        int endIdx = Math.min(blockIndex + blocksToPlace, totalBlocks);
         
         BlockState obsidian = Blocks.OBSIDIAN.defaultBlockState();
         
-        for (int i = startIdx; i < endIdx; i++) {
-            BlockPos blockPos = portal.frameBlocks.get(i);
-            portal.level.setBlock(blockPos, obsidian, 3); // Flag 3: notify neighbors and clients
+        for (int i = blockIndex; i < endIdx; i++) {
+            if (i < portal.frameBlocks.size()) {
+                BlockPos blockPos = portal.frameBlocks.get(i);
+                portal.level.setBlock(blockPos, obsidian, 3); // Flag 3: notify neighbors and clients
+            }
         }
     }
     
     /**
-     * Activate the portal using CustomPortalAPI or fire
+     * Activate the portal by placing fire inside it
+     * The fire block activates the portal visually (purple animated texture)
      */
     private static void activatePortal(PortalInstance portal) {
-        // For now, we'll use fire to ignite the portal
-        // In the future, this could use CustomPortalAPI if available
-        
-        // Find the interior of the portal and place fire
+        // Place fire at portal center to activate it
+        // The fire block will create the purple portal animation effect
         BlockPos firePos = portal.centerPos.offset(0, 1, 0);
         portal.level.setBlock(firePos, Blocks.FIRE.defaultBlockState(), 3);
         
-        CobblewardenBoss.LOGGER.info("Portal activated at {}", portal.centerPos);
+        CobblewardenBoss.LOGGER.info("Portal activated with fire at {}", portal.centerPos);
     }
     
     /**
-     * Spawn the boss Pokemon inside the portal center
+     * Spawn the boss Pokemon at the portal
+     * Giratina spawns 10 blocks forward from portal (closer to player)
+     * Other species spawn at portal center
      */
     private static void spawnBossAtPortal(PortalInstance portal) {
-        // Spawn at portal center, slightly elevated (y+2 to be inside the portal)
-        BlockPos spawnPos = portal.centerPos.offset(0, 2, 0);
-        CobblewardenBoss.LOGGER.info("Spawning {} boss inside portal at {}", portal.species, spawnPos);
+        BlockPos spawnPos;
+        
+        // Giratina is too large to spawn inside portal - spawn 10 blocks forward (toward player)
+        if ("giratina".equals(portal.species)) {
+            spawnPos = portal.centerPos.offset(-10, 0, 0);  // Negative X moves toward original trigger position
+            CobblewardenBoss.LOGGER.info("Spawning Giratina 10 blocks forward from portal at {}", spawnPos);
+        } else {
+            // Other Pokemon spawn at portal center, slightly elevated
+            spawnPos = portal.centerPos.offset(0, 2, 0);
+            CobblewardenBoss.LOGGER.info("Spawning {} boss inside portal at {}", portal.species, spawnPos);
+        }
+        
         BossSpawner.spawnBoss(portal.level, spawnPos, portal.species);
         
         // Mark location as spawned

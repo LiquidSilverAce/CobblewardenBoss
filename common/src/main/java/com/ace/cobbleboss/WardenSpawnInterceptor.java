@@ -30,8 +30,16 @@ public class WardenSpawnInterceptor {
                     serverLevel.getServer().tell(new net.minecraft.server.TickTask(
                         serverLevel.getServer().getTickCount() + 1,
                         () -> {
-                            // Start animated portal creation instead of direct spawn
-                            PortalAnimator.startPortalCreation(serverLevel, spawnPos, species);
+                            // Only Giratina and Guzzlord get portal animations
+                            // Exploud spawns directly without portal
+                            if ("exploud".equals(species)) {
+                                CobblewardenBoss.LOGGER.info("Spawning Exploud without portal animation");
+                                BossSpawner.spawnBoss(serverLevel, spawnPos, species);
+                                AncientCityTracker.markAsSpawned(serverLevel, spawnPos);
+                            } else {
+                                // Start animated portal creation for Giratina and Guzzlord
+                                PortalAnimator.startPortalCreation(serverLevel, spawnPos, species);
+                            }
                         }
                     ));
                 }

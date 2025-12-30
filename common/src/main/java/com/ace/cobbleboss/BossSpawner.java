@@ -57,8 +57,8 @@ public class BossSpawner {
      * Get the spawn command for a specific species
      */
     private static String getSpawnCommand(String species, BlockPos pos) {
-        // Position 10 blocks in front (positive X direction)
-        int spawnX = pos.getX() + 10;
+        // Use the exact position provided - offset is already calculated by caller
+        int spawnX = pos.getX();
         int spawnY = pos.getY();
         int spawnZ = pos.getZ();
         
