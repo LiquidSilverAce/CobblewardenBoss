@@ -223,6 +223,7 @@ public class PortalAnimator {
         List<BlockPos> positions = new ArrayList<>();
         
         // Build a 10-block tall, 10-block wide portal frame
+        // This is a FLAT rectangular frame (like a picture frame), not a 3D cube
         int width = 10;
         int height = 10;
         
@@ -230,23 +231,20 @@ public class PortalAnimator {
         int halfWidth = width / 2;
         
         // Build frame from bottom to top for smooth animation
+        // We only place blocks on a SINGLE PLANE (z = 0), creating a flat rectangular frame
         for (int y = 0; y < height; y++) {
             for (int x = -halfWidth; x <= halfWidth; x++) {
-                for (int z = -halfWidth; z <= halfWidth; z++) {
-                    // Only place blocks on the perimeter edges:
-                    // - Bottom row (y == 0)
-                    // - Top row (y == height - 1)
-                    // - Left edge (x == -halfWidth)
-                    // - Right edge (x == halfWidth)
-                    // - Front edge (z == -halfWidth)
-                    // - Back edge (z == halfWidth)
-                    boolean isEdge = (y == 0 || y == height - 1 || 
-                                     x == -halfWidth || x == halfWidth || 
-                                     z == -halfWidth || z == halfWidth);
-                    
-                    if (isEdge) {
-                        positions.add(center.offset(x, y, z));
-                    }
+                // Only place blocks on the PERIMETER of the rectangle:
+                // - Bottom row (y == 0) - full width
+                // - Top row (y == height - 1) - full width
+                // - Left edge (x == -halfWidth) - only if not already placed by top/bottom
+                // - Right edge (x == halfWidth) - only if not already placed by top/bottom
+                boolean isBottomOrTop = (y == 0 || y == height - 1);
+                boolean isLeftOrRight = (x == -halfWidth || x == halfWidth);
+                
+                // Place block if it's on the perimeter (on a single plane, z=0)
+                if (isBottomOrTop || isLeftOrRight) {
+                    positions.add(center.offset(x, y, 0));
                 }
             }
         }
