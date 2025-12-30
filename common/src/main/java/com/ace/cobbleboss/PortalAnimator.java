@@ -216,23 +216,31 @@ public class PortalAnimator {
     /**
      * Calculate all obsidian frame positions for a 10x10 portal
      * Returns positions ordered from bottom to top for smooth building animation
+     * Creates a proper nether portal frame: rectangular perimeter only (1 block thick)
      */
     private static List<BlockPos> calculateFramePositions(BlockPos center) {
         List<BlockPos> positions = new ArrayList<>();
         
-        // Build a 10-block tall, 10-block wide frame
+        // Build a 10-block tall, 10-block wide portal frame
         int width = 10;
         int height = 10;
         
-        // Bottom to top, layer by layer
+        // Calculate half-width for centering (5 blocks in each direction)
+        int halfWidth = width / 2;
+        
+        // Build frame from bottom to top for smooth animation
         for (int y = 0; y < height; y++) {
-            for (int x = -width/2; x <= width/2; x++) {
-                for (int z = -width/2; z <= width/2; z++) {
-                    // Only add perimeter blocks (frame, not interior)
-                    if (x == -width/2 || x == width/2 || z == -width/2 || z == width/2 || y == 0 || y == height - 1) {
-                        positions.add(center.offset(x, y, z));
-                    }
-                }
+            // Place obsidian only on the perimeter of the frame
+            for (int x = -halfWidth; x <= halfWidth; x++) {
+                // Front and back edges at z = -halfWidth and z = halfWidth
+                positions.add(center.offset(x, y, -halfWidth));
+                positions.add(center.offset(x, y, halfWidth));
+            }
+            
+            // Left and right edges (skip corners to avoid duplicates)
+            for (int z = -halfWidth + 1; z < halfWidth; z++) {
+                positions.add(center.offset(-halfWidth, y, z));
+                positions.add(center.offset(halfWidth, y, z));
             }
         }
         

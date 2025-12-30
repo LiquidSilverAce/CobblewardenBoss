@@ -55,7 +55,7 @@ public class BossSpawner {
         switch (species) {
             case "giratina":
                 command = String.format(
-                    "pokespawnat %d %d %d giratina level=100 nature=mild special_attack_ev=252 attack_ev=252 special_attack_iv=31 attack_iv=31 uncatchable=true",
+                    "pokespawnat %d %d %d giratina level=100 nature=mild special_attack_ev=252 attack_ev=252 special_attack_iv=31 attack_iv=31 moves=earthquake,dracometeor,shadowball,earthpower uncatchable=true",
                     spawnX, spawnY, spawnZ
                 );
                 break;
