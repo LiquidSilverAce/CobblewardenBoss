@@ -217,6 +217,7 @@ public class PortalAnimator {
      * Calculate all obsidian frame positions for a 10x10 portal
      * Returns positions ordered from bottom to top for smooth building animation
      * Creates a proper nether portal frame: rectangular perimeter only (1 block thick)
+     * Only the edges (top, bottom, left, right) have obsidian, interior is hollow
      */
     private static List<BlockPos> calculateFramePositions(BlockPos center) {
         List<BlockPos> positions = new ArrayList<>();
@@ -230,17 +231,23 @@ public class PortalAnimator {
         
         // Build frame from bottom to top for smooth animation
         for (int y = 0; y < height; y++) {
-            // Place obsidian only on the perimeter of the frame
             for (int x = -halfWidth; x <= halfWidth; x++) {
-                // Front and back edges at z = -halfWidth and z = halfWidth
-                positions.add(center.offset(x, y, -halfWidth));
-                positions.add(center.offset(x, y, halfWidth));
-            }
-            
-            // Left and right edges (skip corners to avoid duplicates)
-            for (int z = -halfWidth + 1; z < halfWidth; z++) {
-                positions.add(center.offset(-halfWidth, y, z));
-                positions.add(center.offset(halfWidth, y, z));
+                for (int z = -halfWidth; z <= halfWidth; z++) {
+                    // Only place blocks on the perimeter edges:
+                    // - Bottom row (y == 0)
+                    // - Top row (y == height - 1)
+                    // - Left edge (x == -halfWidth)
+                    // - Right edge (x == halfWidth)
+                    // - Front edge (z == -halfWidth)
+                    // - Back edge (z == halfWidth)
+                    boolean isEdge = (y == 0 || y == height - 1 || 
+                                     x == -halfWidth || x == halfWidth || 
+                                     z == -halfWidth || z == halfWidth);
+                    
+                    if (isEdge) {
+                        positions.add(center.offset(x, y, z));
+                    }
+                }
             }
         }
         
@@ -311,7 +318,7 @@ public class PortalAnimator {
         // Spawn at portal center, slightly elevated (y+2 to be inside the portal)
         BlockPos spawnPos = portal.centerPos.offset(0, 2, 0);
         CobblewardenBoss.LOGGER.info("Spawning {} boss inside portal at {}", portal.species, spawnPos);
-        BossSpawner.spawnBoss(portal.level, spawnPos);
+        BossSpawner.spawnBoss(portal.level, spawnPos, portal.species);
         
         // Mark location as spawned
         AncientCityTracker.markAsSpawned(portal.level, portal.centerPos);

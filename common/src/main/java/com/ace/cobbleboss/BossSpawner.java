@@ -21,6 +21,17 @@ public class BossSpawner {
         
         // Determine which species to spawn based on location
         String species = determineSpecies(serverLevel, pos);
+        spawnBoss(level, pos, species);
+    }
+    
+    /**
+     * Spawn a specific boss Pokemon species at the given position
+     */
+    public static void spawnBoss(Level level, BlockPos pos, String species) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            CobblewardenBoss.LOGGER.warn("Cannot spawn boss Pokemon on client side");
+            return;
+        }
         
         try {
             // Get spawn command for the species
