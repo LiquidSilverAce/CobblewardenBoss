@@ -291,12 +291,14 @@ public class PortalAnimator {
         int blocksToPlace = Math.max(1, totalBlocks / 100);
         int endIdx = Math.min(blockIndex + blocksToPlace, totalBlocks);
         
-        BlockState obsidian = Blocks.OBSIDIAN.defaultBlockState();
+        // Use NETHER_PORTAL blocks instead of OBSIDIAN for non-solid, clippable frame edges
+        // This allows entities (like Giratina) to pass through portal edges without collision
+        BlockState netherPortal = Blocks.NETHER_PORTAL.defaultBlockState();
         
         for (int i = blockIndex; i < endIdx; i++) {
             if (i < portal.frameBlocks.size()) {
                 BlockPos blockPos = portal.frameBlocks.get(i);
-                portal.level.setBlock(blockPos, obsidian, 3); // Flag 3: notify neighbors and clients
+                portal.level.setBlock(blockPos, netherPortal, 3); // Flag 3: notify neighbors and clients
             }
         }
     }
@@ -316,22 +318,22 @@ public class PortalAnimator {
     
     /**
      * Spawn the boss Pokemon at the portal
-     * Giratina spawns 10 blocks forward from portal (closer to player)
-     * Other species spawn at portal center
+     * All species now spawn in the CENTER of the portal's interior air space
+     * Portal frame is now non-solid (NETHER_PORTAL blocks), so entities can pass through
      */
     private static void spawnBossAtPortal(PortalInstance portal) {
-        BlockPos spawnPos;
+        // Spawn at the center of the portal's interior air space
+        // Portal structure: 10×10 frame with 8×8 interior
+        // Frame edges are at X: -5 to +4, Z: -5 to +4, Y: 0 to 9 (relative to portal center)
+        // Interior (air space): X: -4 to +3, Z: -4 to +3, Y: 0 to 9
+        // 
+        // Spawn position: center of interior, one block above base
+        // X = portalCenter.getX() + 0 (already centered)
+        // Y = portalCenter.getY() + 1 (one block above base, inside air)
+        // Z = portalCenter.getZ() + 0 (already centered)
+        BlockPos spawnPos = portal.centerPos.offset(0, 1, 0);
         
-        // Giratina is too large to spawn inside portal - spawn 10 blocks forward (toward player)
-        if ("giratina".equals(portal.species)) {
-            spawnPos = portal.centerPos.offset(-10, 0, 0);  // Negative X moves toward original trigger position
-            CobblewardenBoss.LOGGER.info("Spawning Giratina 10 blocks forward from portal at {}", spawnPos);
-        } else {
-            // Other Pokemon spawn at portal center, slightly elevated
-            spawnPos = portal.centerPos.offset(0, 2, 0);
-            CobblewardenBoss.LOGGER.info("Spawning {} boss inside portal at {}", portal.species, spawnPos);
-        }
-        
+        CobblewardenBoss.LOGGER.info("Spawning {} in portal interior center at {}", portal.species, spawnPos);
         BossSpawner.spawnBoss(portal.level, spawnPos, portal.species);
         
         // Mark location as spawned
@@ -339,12 +341,12 @@ public class PortalAnimator {
     }
     
     /**
-     * Destroy the portal by removing all frame blocks
+     * Destroy the portal by removing all frame blocks (nether portal blocks)
      */
     private static void destroyPortal(PortalInstance portal) {
         CobblewardenBoss.LOGGER.info("Destroying portal at {}", portal.centerPos);
         
-        // Remove all obsidian blocks
+        // Remove all nether portal blocks
         for (BlockPos blockPos : portal.frameBlocks) {
             portal.level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 3);
         }
