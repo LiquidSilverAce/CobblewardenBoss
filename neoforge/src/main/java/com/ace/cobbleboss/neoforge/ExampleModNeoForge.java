@@ -2,12 +2,12 @@ package com.ace.cobbleboss.neoforge;
 
 import net.neoforged.fml.common.Mod;
 
-import com.ace.cobbleboss.ExampleMod;
+import com.ace.cobbleboss.CobblewardenBoss;
 
-@Mod(ExampleMod.MOD_ID)
+@Mod(CobblewardenBoss.MOD_ID)
 public final class ExampleModNeoForge {
     public ExampleModNeoForge() {
         // Run our common setup.
-        ExampleMod.init();
+        CobblewardenBoss.init();
     }
 }

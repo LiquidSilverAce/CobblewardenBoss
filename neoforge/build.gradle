@@ -36,6 +36,12 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury-neoforge:$rootProject.architectury_api_version"
+    
+    // Cobblemon dependency (NeoForge)
+    modImplementation "curse.maven:cobblemon-687131:7273151"
+    
+    // Fight or Flight Reborn dependency (NeoForge)
+    modImplementation "curse.maven:cobblemon-fight-or-flight-reborn-1168140:7342687"
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
     shadowBundle project(path: ':common', configuration: 'transformProductionNeoForge')

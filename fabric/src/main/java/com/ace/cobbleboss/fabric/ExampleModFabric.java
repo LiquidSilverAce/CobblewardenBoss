@@ -2,7 +2,7 @@ package com.ace.cobbleboss.fabric;
 
 import net.fabricmc.api.ModInitializer;
 
-import com.ace.cobbleboss.ExampleMod;
+import com.ace.cobbleboss.CobblewardenBoss;
 
 public final class ExampleModFabric implements ModInitializer {
     @Override
@@ -12,6 +12,6 @@ public final class ExampleModFabric implements ModInitializer {
         // Proceed with mild caution.
 
         // Run our common setup.
-        ExampleMod.init();
+        CobblewardenBoss.init();
     }
 }

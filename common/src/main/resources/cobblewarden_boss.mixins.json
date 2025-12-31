@@ -6,6 +6,7 @@
   "client": [
   ],
   "mixins": [
+    "PokemonEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -3,13 +3,13 @@
   "id": "cobblewarden_boss",
   "version": "${version}",
   "name": "Cobblewarden Boss",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Replaces the vanilla Warden with a powerful Guzzlord boss in Ancient Cities. Requires Cobblemon and Fight or Flight Reborn.",
   "authors": [
-    "Me!"
+    "LiquidSilverAce"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/LiquidSilverAce/CobblewardenBoss",
+    "sources": "https://github.com/LiquidSilverAce/CobblewardenBoss"
   },
   "license": "CC0-1.0",
   "icon": "assets/cobblewarden_boss/icon.png",
@@ -26,11 +26,13 @@
     "cobblewarden_boss.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.18.4",
+    "fabricloader": ">=0.17.3",
     "minecraft": "~1.21.1",
     "java": ">=21",
     "architectury": ">=13.0.8",
-    "fabric-api": "*"
+    "fabric-api": "*",
+    "cobblemon": ">=1.7.1",
+    "fightorflight": ">=0.10.2"
   },
   "suggests": {
     "another-mod": "*"
