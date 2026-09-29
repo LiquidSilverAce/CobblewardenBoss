@@ -1,6 +1,7 @@
 package com.ace.cobbleboss;
 
 import com.ace.cobbleboss.config.BossConfig;
+import com.ace.cobbleboss.combat.BossCombat;
 import com.ace.cobbleboss.spawn.BossSpawner;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -23,7 +24,8 @@ public final class CobblewardenBoss {
     }
 
     public static void init() {
-        LifecycleEvent.SERVER_STARTING.register(server -> reloadConfig());
+        LifecycleEvent.SERVER_BEFORE_START.register(server -> reloadConfig());
+        CobblemonEvents.BATTLE_STARTED_PRE.subscribe(BossCombat::preventBattle);
         // World damage and ordinary battles both update Pokémon HP. The battle event also
         // supplies the original Pokémon when another addon battles with a temporary copy.
         CobblemonEvents.POKEMON_FAINTED.subscribe(event -> BossSpawner.recordDefeat(event.getPokemon()));

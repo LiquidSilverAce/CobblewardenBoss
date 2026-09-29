@@ -2,6 +2,17 @@ package com.ace.cobbleboss.gametest;
 
 import com.ace.cobbleboss.CobblewardenBoss;
 import com.ace.cobbleboss.config.BossConfig;
+import com.ace.cobbleboss.combat.BossCombat;
+import com.cobblemon.mod.common.api.events.CobblemonEvents;
+import com.cobblemon.mod.common.api.events.battles.BattleStartedEvent;
+import com.cobblemon.mod.common.api.battles.model.PokemonBattle;
+import com.cobblemon.mod.common.battles.actor.PlayerBattleActor;
+import com.cobblemon.mod.common.battles.BattleFormat;
+import com.cobblemon.mod.common.battles.BattleSide;
+import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import com.ace.cobbleboss.spawn.BossSpawner;
 import com.ace.cobbleboss.state.DefeatedCities;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
@@ -49,7 +60,7 @@ import java.util.UUID;
 /** Exercises the real mixins and Cobblemon entities in a dedicated server. */
 public final class BossGameTests implements FabricGameTest {
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 200)
-    public void triggeredSpawnsAndCityProgression(GameTestHelper helper) throws IOException {
+    public void triggeredSpawnsAndCityProgression(GameTestHelper helper) throws Exception {
         ServerLevel level = helper.getLevel();
         level.getServer().overworld().getDataStorage().set(CobblewardenBoss.MOD_ID + "_cities", new DefeatedCities());
         BlockPos pos = helper.absolutePos(new BlockPos(24, 3, 24));
@@ -67,7 +78,7 @@ public final class BossGameTests implements FabricGameTest {
                 helper.assertTrue(pokemon(level, pos).isEmpty(), "Spawned before the fourth warning");
             }
             respond(level, shrieker, 4);
-            expectSpecies(helper, pos, "exploud");
+            helper.assertTrue(!expectSpecies(helper, pos, "exploud").isUncatchable(), "Ordinary replacements remain catchable");
             helper.assertTrue(wardens(level, pos).isEmpty(), "A vanilla Warden leaked through");
             helper.assertTrue(WardenSpawnTracker.tryWarn(level, pos, helper.makeMockServerPlayerInLevel()).isEmpty(),
                     "Replacement must suppress further warnings like a nearby Warden");
@@ -127,16 +138,31 @@ public final class BossGameTests implements FabricGameTest {
             installCity(level, pos);
             String firstCity = BossSpawner.ancientCityAt(level, pos);
             helper.assertTrue(firstCity != null, "Actual structure bounds must identify an Ancient City");
-            respond(level, shrieker, 4);
+            ServerPlayer trigger = helper.makeMockServerPlayerInLevel();
+            trigger.setGameMode(GameType.SURVIVAL);
+            trigger.moveTo(pos.getX() + 12, pos.getY(), pos.getZ());
+            trigger.getWardenSpawnTracker().orElseThrow().setWarningLevel(3);
+            shrieker.tryShriek(level, trigger);
+            CompoundTag savedShrieker = shrieker.saveWithoutMetadata(level.registryAccess());
+            helper.assertTrue(savedShrieker.hasUUID("cobblewarden_boss_trigger"), "Accepted shriek must save its triggering player");
+            shrieker.loadWithComponents(savedShrieker, level.registryAccess());
+            shrieker.tryRespond(level);
             PokemonEntity giratina = expectSpecies(helper, pos, "giratina");
             helper.assertTrue(firstCity.equals(giratina.getPokemon().getPersistentData().getString(BossSpawner.CITY_KEY)),
                     "City identity must travel with the boss");
+            helper.assertTrue(trigger.getUUID().equals(giratina.getPokemon().getPersistentData().getUUID(BossCombat.TRIGGER_KEY)),
+                    "Boss must remember the player responsible for the warning");
+            verifyCombat(helper, giratina, trigger);
+            trigger.discard();
             CompoundTag savedBoss = new CompoundTag();
             helper.assertTrue(giratina.save(savedBoss), "Boss must be saveable");
             Entity reloaded = EntityType.loadEntityRecursive(savedBoss, level, entity -> entity);
             helper.assertTrue(reloaded instanceof PokemonEntity && reloaded.getTags().contains(BossSpawner.BOSS_TAG)
                             && firstCity.equals(((PokemonEntity) reloaded).getPokemon().getPersistentData().getString(BossSpawner.CITY_KEY)),
                     "Boss markers must survive chunk save/load");
+            helper.assertTrue(((PokemonEntity) reloaded).isUncatchable()
+                            && trigger.getUUID().equals(((PokemonEntity) reloaded).getPokemon().getPersistentData().getUUID(BossCombat.TRIGGER_KEY)),
+                    "Capture protection and trigger identity must survive saving");
             reloaded.discard();
             DefeatedCities cities = DefeatedCities.get(level.getServer());
             helper.assertTrue(!cities.isDefeated(firstCity), "Spawning alone must not clear the city");
@@ -160,6 +186,7 @@ public final class BossGameTests implements FabricGameTest {
             SculkShriekerBlockEntity secondShrieker = shrieker(level, other, true);
             respond(level, secondShrieker, 4);
             PokemonEntity guzzlord = expectSpecies(helper, other, "guzzlord");
+            helper.assertTrue(guzzlord.isUncatchable(), "Guzzlord must also default to uncatchable");
             String secondCity = BossSpawner.ancientCityAt(level, other);
             helper.assertTrue(!firstCity.equals(secondCity) && !cities.isDefeated(secondCity),
                     "Defeating one city must leave another city's boss available");
@@ -193,6 +220,93 @@ public final class BossGameTests implements FabricGameTest {
         } finally {
             clear(level, pos);
             configure(BossConfig.DEFAULT);
+        }
+    }
+
+    private static void verifyCombat(GameTestHelper helper, PokemonEntity boss, ServerPlayer trigger) throws Exception {
+        boolean reborn = Platform.isModLoaded("fightorflight");
+        helper.assertTrue(boss.isUncatchable(), "Boss capture protection must default to on");
+        if (!reborn) {
+            boss.getEntityData().set(PokemonEntity.getUNBATTLEABLE(), true);
+            boss.tick(); // Simulate loading a boss after removing Reborn.
+        }
+        helper.assertTrue(boss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()) == reborn,
+                "Open-world-only defaults on with Reborn, but must allow battles without it");
+        ServerPlayer nearer = helper.makeMockServerPlayerInLevel();
+        nearer.setGameMode(GameType.SURVIVAL);
+        nearer.moveTo(boss.getX() + 3, boss.getY(), boss.getZ());
+        trigger.moveTo(boss.getX() + 12, boss.getY(), boss.getZ());
+        try {
+            BossCombat.update(boss);
+            helper.assertTrue(BossCombat.chooseTarget(boss) == trigger, "Trigger must take priority over a nearer player");
+            if (reborn) {
+                helper.assertTrue(boss.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) == trigger,
+                        "Boss AI must target the triggering player");
+                for (int tick = 0; tick < 5; tick++) boss.tick();
+                helper.assertTrue(boss.getTarget() == trigger
+                                && boss.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) == trigger,
+                        "Normal entity AI ticks must preserve trigger priority");
+                helper.assertTrue(!boss.canBattle(trigger), "Native battle challenge must be rejected");
+                Class<?> utils = Class.forName("me.rufia.fightorflight.utils.PokemonUtils");
+                Object rebornConfig = Class.forName("me.rufia.fightorflight.CobblemonFightOrFlight")
+                        .getMethod("commonConfig").invoke(null);
+                var minimumLevel = rebornConfig.getClass().getField("minimum_attack_level");
+                var forceBattle = rebornConfig.getClass().getField("force_wild_battle_on_player_hurt");
+                Object oldMinimum = minimumLevel.get(rebornConfig), oldForceBattle = forceBattle.get(rebornConfig);
+                try {
+                    minimumLevel.setInt(rebornConfig, 101);
+                    forceBattle.setBoolean(rebornConfig, true);
+                    helper.assertTrue((boolean) utils.getMethod("shouldFightTarget", PokemonEntity.class).invoke(null, boss),
+                            "Boss aggression must override Reborn's ordinary attack-level restriction");
+                    helper.assertTrue(!(boolean) utils.getMethod("shouldAvoid", PokemonEntity.class).invoke(null, boss),
+                            "Boss must not flee");
+                    helper.assertTrue(!(boolean) utils.getMethod("pokemonTryForceEncounter", PokemonEntity.class, Entity.class)
+                            .invoke(null, boss, trigger), "Even enabled forced encounters must not replace boss world attacks");
+                } finally {
+                    minimumLevel.set(rebornConfig, oldMinimum);
+                    forceBattle.set(rebornConfig, oldForceBattle);
+                }
+                helper.assertTrue(!(boolean) utils.getMethod("pokemonForceEncounterPvE", ServerPlayer.class, PokemonEntity.class)
+                        .invoke(null, trigger, boss), "Reborn must not send a forced battle prompt");
+                // Expire vanilla login protection before testing real damage.
+                for (int tick = 0; tick < 61; tick++) trigger.tick();
+                float health = trigger.getHealth();
+                Class<?> attacks = Class.forName("me.rufia.fightorflight.entity.PokemonAttackEffect");
+                attacks.getMethod("pokemonAttack", PokemonEntity.class, Entity.class).invoke(null, boss, trigger);
+                helper.assertTrue(trigger.getHealth() < health, "Reborn boss attacks must actually damage players");
+                trigger.setHealth(trigger.getMaxHealth());
+                PokemonProperties petProperties = new PokemonProperties();
+                petProperties.setSpecies("tyranitar");
+                PokemonEntity pet = petProperties.createEntity(helper.getLevel());
+                PlayerPartyStore party = new PlayerPartyStore(trigger.getUUID());
+                helper.assertTrue(party.add(pet.getPokemon()), "Could not prepare player-owned combat Pokémon");
+                pet.getPokemon().setState(new SentOutState(pet));
+                float bossHealth = boss.getHealth();
+                boss.hurt(helper.getLevel().damageSources().mobAttack(pet), 1);
+                helper.assertTrue(boss.getHealth() < bossHealth, "Battle restriction must not block open-world Pokémon damage");
+                pet.discard();
+            }
+            var actor = new PlayerBattleActor(trigger.getUUID(), List.of(BattlePokemon.Companion.playerOwned(boss.getPokemon())));
+            var opponent = new PlayerBattleActor(nearer.getUUID(), List.of());
+            var battle = new PokemonBattle(new BattleFormat(), new BattleSide(actor), new BattleSide(opponent));
+            var event = new BattleStartedEvent.Pre(battle, null);
+            CobblemonEvents.BATTLE_STARTED_PRE.post(event);
+            helper.assertTrue(event.isCanceled() == reborn, "Programmatic battles must respect the combat restriction");
+            trigger.setGameMode(GameType.CREATIVE);
+            BossCombat.update(boss);
+            helper.assertTrue(BossCombat.chooseTarget(boss) == nearer, "Unavailable trigger must fall back to the nearest player");
+            trigger.setGameMode(GameType.SURVIVAL);
+            trigger.moveTo(boss.getX() + 100, boss.getY(), boss.getZ());
+            helper.assertTrue(BossCombat.chooseTarget(boss) == nearer, "Out-of-range trigger must use the nearest player");
+            configure(new BossConfig(true, "dusknoir", "giratina", 70, false, false, false));
+            BossCombat.update(boss);
+            helper.assertTrue(!boss.isUncatchable() && !boss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                    "Capture and regular battles must be independently configurable");
+            if (reborn) helper.assertTrue(boss.getTarget() == null, "Disabling forced aggression must release its target");
+            configure(new BossConfig(true, "dusknoir", "giratina", 70));
+            BossCombat.update(boss);
+        } finally {
+            nearer.discard();
         }
     }
 

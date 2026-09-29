@@ -12,10 +12,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
-public record BossConfig(boolean enabled, String defaultSpecies, String ancientCitySpecies, int pokemonLevel) {
+public record BossConfig(boolean enabled, String defaultSpecies, String ancientCitySpecies, int pokemonLevel,
+                         boolean bossUncatchable, boolean bossRealTimeCombat, boolean bossAlwaysAggressive) {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Set<String> FIELDS = Set.of("enabled", "defaultSpecies", "ancientCitySpecies", "pokemonLevel");
+    private static final Set<String> FIELDS = Set.of("enabled", "defaultSpecies", "ancientCitySpecies", "pokemonLevel",
+            "bossUncatchable", "bossRealTimeCombat", "bossAlwaysAggressive");
     public static final BossConfig DEFAULT = new BossConfig(true, "exploud", "default", 70);
+
+    public BossConfig(boolean enabled, String defaultSpecies, String ancientCitySpecies, int pokemonLevel) {
+        this(enabled, defaultSpecies, ancientCitySpecies, pokemonLevel, true, true, true);
+    }
 
     public BossConfig {
         if (defaultSpecies == null || !Set.of("exploud", "dusknoir").contains(defaultSpecies)) {
@@ -79,7 +85,19 @@ public record BossConfig(boolean enabled, String defaultSpecies, String ancientC
             }
         }
         return new BossConfig(enabled, string(object, "defaultSpecies", DEFAULT.defaultSpecies),
-                string(object, "ancientCitySpecies", DEFAULT.ancientCitySpecies), level);
+                string(object, "ancientCitySpecies", DEFAULT.ancientCitySpecies), level,
+                bool(object, "bossUncatchable", DEFAULT.bossUncatchable),
+                bool(object, "bossRealTimeCombat", DEFAULT.bossRealTimeCombat),
+                bool(object, "bossAlwaysAggressive", DEFAULT.bossAlwaysAggressive));
+    }
+
+    private static boolean bool(JsonObject object, String key, boolean fallback) {
+        if (!object.has(key)) return fallback;
+        JsonElement value = object.get(key);
+        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+            throw new IllegalArgumentException(key + " must be a boolean");
+        }
+        return value.getAsBoolean();
     }
 
     private static String string(JsonObject object, String key, String fallback) {

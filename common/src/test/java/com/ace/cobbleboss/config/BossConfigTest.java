@@ -25,9 +25,21 @@ class BossConfigTest {
     void missingSettingsKeepDefaults() {
         BossConfig config = BossConfig.parse("{\"defaultSpecies\":\"dusknoir\"}");
         assertTrue(config.enabled());
+        assertTrue(config.bossUncatchable());
+        assertTrue(config.bossRealTimeCombat());
+        assertTrue(config.bossAlwaysAggressive());
         assertEquals(70, config.pokemonLevel());
         assertEquals("dusknoir", config.speciesFor(false, false));
         assertEquals("dusknoir", config.speciesFor(true, false));
+    }
+
+    @Test
+    void bossRestrictionsCanBeDisabledIndependently() {
+        BossConfig config = BossConfig.parse("{\"bossUncatchable\":false,\"bossRealTimeCombat\":false,\"bossAlwaysAggressive\":false}");
+        assertFalse(config.bossUncatchable());
+        assertFalse(config.bossRealTimeCombat());
+        assertFalse(config.bossAlwaysAggressive());
+        assertTrue(BossConfig.parse("{\"bossUncatchable\":false}").bossRealTimeCombat());
     }
 
     @ParameterizedTest
@@ -48,6 +60,7 @@ class BossConfigTest {
             "{\"defaultSpecies\":\"guzzlord\"}", "{\"ancientCitySpecies\":\"pikachu\"}",
             "{\"pokemonLevel\":0}", "{\"pokemonLevel\":101}", "{\"pokemonLevel\":70.5}",
             "{\"pokemonLevel\":4294967366}", "{\"pokemonLevel\":\"70\"}",
+            "{\"bossUncatchable\":null}", "{\"bossRealTimeCombat\":\"true\"}", "{\"bossAlwaysAggressive\":1}",
             "{\"enabled\":\"false\"}", "{\"defaultSpeces\":\"dusknoir\"}"
     })
     void invalidSettingsAreRejected(String json) {

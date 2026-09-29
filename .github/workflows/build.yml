@@ -22,6 +22,7 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew build :fabric:runGametest -Pcobblemon_version=${{ matrix.cobblemon }} --no-daemon --max-workers=2
+      - run: ./gradlew :fabric:runGametest -PtestFightOrFlight -Pcobblemon_version=${{ matrix.cobblemon }} --no-daemon --max-workers=2
       - if: matrix.cobblemon == '1.7.3+1.21.1'
         run: ./gradlew :fabric:runGametest -PtestMobsBeGone --no-daemon --max-workers=2
       - uses: actions/upload-artifact@v4

@@ -2,6 +2,7 @@ package com.ace.cobbleboss.spawn;
 
 import com.ace.cobbleboss.CobblewardenBoss;
 import com.ace.cobbleboss.config.BossConfig;
+import com.ace.cobbleboss.combat.BossCombat;
 import com.ace.cobbleboss.mixin.SpawnUtilAccessor;
 import com.ace.cobbleboss.state.DefeatedCities;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
@@ -20,6 +21,8 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.UUID;
 
 public final class BossSpawner {
     public static final String BOSS_TAG = CobblewardenBoss.MOD_ID + ":replacement";
@@ -56,6 +59,10 @@ public final class BossSpawner {
     }
 
     public static boolean trySpawn(ServerLevel level, BlockPos shriekerPos) {
+        return trySpawn(level, shriekerPos, null);
+    }
+
+    public static boolean trySpawn(ServerLevel level, BlockPos shriekerPos, UUID triggeringPlayer) {
         // Recheck at spawn time: two shriekers can finish shrieking on the same tick.
         if (hasNearbyReplacement(level, shriekerPos)
                 || !level.getEntitiesOfClass(Warden.class, nearbyBox(shriekerPos)).isEmpty()) {
@@ -77,6 +84,8 @@ public final class BossSpawner {
         entity.addTag(BOSS_TAG);
         if (city != null && (species.equals("giratina") || species.equals("guzzlord"))) {
             entity.getPokemon().getPersistentData().putString(CITY_KEY, city);
+            if (triggeringPlayer != null) entity.getPokemon().getPersistentData().putUUID(BossCombat.TRIGGER_KEY, triggeringPlayer);
+            BossCombat.update(entity);
         }
 
         BlockPos.MutableBlockPos candidate = shriekerPos.mutable();
@@ -102,6 +111,7 @@ public final class BossSpawner {
             if (level.addFreshEntity(entity)) {
                 // Link immediately so even damage before the first entity tick can credit the city.
                 entity.getPokemon().setState(new SentOutState(entity));
+                BossCombat.update(entity);
                 return true;
             }
             // Respect another mod rejecting the spawn instead of repeatedly submitting it.

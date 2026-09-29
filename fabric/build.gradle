@@ -8,6 +8,7 @@ architectury {
 }
 
 repositories {
+    maven { url = 'https://maven.shedaniel.me/' }
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -42,6 +43,10 @@ dependencies {
     modImplementation "dev.architectury:architectury-fabric:$rootProject.architectury_api_version"
     modImplementation "com.cobblemon:fabric:$rootProject.cobblemon_version"
     modLocalRuntime 'net.fabricmc:fabric-language-kotlin:1.13.6+kotlin.2.2.20'
+    if (providers.gradleProperty('testFightOrFlight').isPresent()) {
+        modLocalRuntime 'maven.modrinth:cobblemon-fight-or-flight-reborn:CHXL2ka3'
+        modLocalRuntime 'me.shedaniel.cloth:cloth-config-fabric:15.0.140'
+    }
     if (providers.gradleProperty('testMobsBeGone').isPresent()) {
         // Exact MobsBeGone release bundled with Cobbleverse 1.7.42; development tests only.
         modLocalRuntime 'maven.modrinth:hXvXSxxg:B5tawRRL'
