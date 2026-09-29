@@ -1,29 +1,29 @@
 modLoader = "javafml"
 loaderVersion = "[4,)"
 #issueTrackerURL = ""
-license = "Insert License Here"
+license = "CC0-1.0"
 
 [[mods]]
 modId = "cobblewarden_boss"
 version = "${version}"
 displayName = "Cobblewarden Boss"
-authors = "Me!"
+authors = "LiquidSilverAce"
 description = '''
-This is an example description! Tell everyone what your mod is about!
+Replace sculk shrieker Warden spawns with Exploud or Dusknoir, and optional Giratina or Guzzlord bosses in Ancient Cities.
 '''
 #logoFile = ""
 
 [[dependencies.cobblewarden_boss]]
 modId = "neoforge"
 type = "required"
-versionRange = "[21.1,)"
+versionRange = "[21.1.215,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.cobblewarden_boss]]
 modId = "minecraft"
 type = "required"
-versionRange = "[1.21.1,)"
+versionRange = "[1.21.1]"
 ordering = "NONE"
 side = "BOTH"
 
@@ -36,3 +36,10 @@ side = "BOTH"
 
 [[mixins]]
 config = "cobblewarden_boss.mixins.json"
+
+[[dependencies.cobblewarden_boss]]
+modId = "cobblemon"
+type = "required"
+versionRange = "[1.7.3,1.9)"
+ordering = "AFTER"
+side = "BOTH"

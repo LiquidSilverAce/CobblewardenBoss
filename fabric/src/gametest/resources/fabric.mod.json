@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "cobblewarden_boss_tests",
+  "version": "1.0.0",
+  "name": "Cobblewarden Game Tests",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": ["com.ace.cobbleboss.gametest.BossGameTests"]
+  },
+  "depends": {
+    "cobblewarden_boss": "*",
+    "fabric-gametest-api-v1": "*"
+  }
+}

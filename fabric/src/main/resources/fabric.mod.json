@@ -3,23 +3,18 @@
   "id": "cobblewarden_boss",
   "version": "${version}",
   "name": "Cobblewarden Boss",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Replace sculk shrieker Warden spawns with Exploud or Dusknoir, and optional Giratina or Guzzlord bosses in Ancient Cities.",
   "authors": [
-    "Me!"
+    "LiquidSilverAce"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "sources": "https://github.com/LiquidSilverAce/CobblewardenBoss"
   },
   "license": "CC0-1.0",
-  "icon": "assets/cobblewarden_boss/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.ace.cobbleboss.fabric.ExampleModFabric"
-    ],
-    "client": [
-      "com.ace.cobbleboss.fabric.client.ExampleModFabricClient"
+      "com.ace.cobbleboss.fabric.CobblewardenBossFabric"
     ]
   },
   "mixins": [
@@ -27,12 +22,10 @@
   ],
   "depends": {
     "fabricloader": ">=0.18.4",
-    "minecraft": "~1.21.1",
+    "minecraft": "1.21.1",
     "java": ">=21",
     "architectury": ">=13.0.8",
-    "fabric-api": "*"
-  },
-  "suggests": {
-    "another-mod": "*"
+    "fabric-api": "*",
+    "cobblemon": ">=1.7.3 <1.9"
   }
 }

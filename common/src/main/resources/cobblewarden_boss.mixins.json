@@ -6,6 +6,9 @@
   "client": [
   ],
   "mixins": [
+    "SculkShriekerBlockEntityMixin",
+    "SpawnUtilAccessor",
+    "WardenSpawnTrackerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

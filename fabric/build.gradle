@@ -7,6 +7,14 @@ architectury {
     fabric()
 }
 
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
 configurations {
     common {
         canBeResolved = true
@@ -32,6 +40,12 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury-fabric:$rootProject.architectury_api_version"
+    modImplementation "com.cobblemon:fabric:$rootProject.cobblemon_version"
+    modLocalRuntime 'net.fabricmc:fabric-language-kotlin:1.13.6+kotlin.2.2.20'
+    if (providers.gradleProperty('testMobsBeGone').isPresent()) {
+        // Exact MobsBeGone release bundled with Cobbleverse 1.7.42; development tests only.
+        modLocalRuntime 'maven.modrinth:hXvXSxxg:B5tawRRL'
+    }
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
@@ -52,4 +66,46 @@ shadowJar {
 
 remapJar {
     inputFile.set shadowJar.archiveFile
+}
+
+sourcesJar {
+    from project(':common').sourceSets.main.allSource
+}
+
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+loom {
+    mods {
+        cobblewarden_boss {
+            sourceSet sourceSets.main
+            sourceSet project(':common').sourceSets.main
+        }
+        cobblewarden_boss_tests {
+            sourceSet sourceSets.gametest
+        }
+    }
+    runs {
+        gametest {
+            server()
+            name 'Cobblewarden Game Tests'
+            source sourceSets.gametest
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file('gametest-results.xml').get().asFile}"
+            runDir 'build/gametest'
+        }
+    }
+}
+
+tasks.named('runGametest') {
+    timeout = java.time.Duration.ofMinutes(5)
+    doFirst {
+        def blacklist = layout.buildDirectory.file('gametest/config/mobsbegone-blacklist.json').get().asFile
+        blacklist.parentFile.mkdirs()
+        blacklist.text = '["minecraft:warden"]\n'
+    }
 }
