@@ -28,6 +28,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
@@ -56,14 +57,39 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /** Exercises the real mixins and Cobblemon entities in a dedicated server. */
 public final class BossGameTests implements FabricGameTest {
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 200)
     public void triggeredSpawnsAndCityProgression(GameTestHelper helper) throws Exception {
         ServerLevel level = helper.getLevel();
-        level.getServer().overworld().getDataStorage().set(CobblewardenBoss.MOD_ID + "_cities", new DefeatedCities());
         BlockPos pos = helper.absolutePos(new BlockPos(24, 3, 24));
+        BlockPos other = pos.offset(128, 0, 0);
+        // Both arenas extend beyond the empty GameTest structure's ticking chunks.
+        // Loading blocks alone is insufficient for immediate entity queries there.
+        List<ChunkPos> testChunks = Stream.of(pos, other).flatMap(center ->
+                new BoundingBox(center.getX() - 8, center.getY() - 1, center.getZ() - 8,
+                        center.getX() + 8, center.getY() + 8, center.getZ() + 8).intersectingChunks())
+                .distinct().toList();
+        testChunks.forEach(chunk -> level.getChunkSource().addRegionTicket(TicketType.FORCED, chunk, 2, chunk));
+        helper.startSequence().thenWaitUntil(() -> testChunks.forEach(chunk ->
+                helper.assertTrue(level.isPositionEntityTicking(chunk.getWorldPosition()),
+                        "City fixtures must be in entity-ticking chunks")))
+                .thenExecute(() -> {
+                    try {
+                        verifyTriggeredSpawnsAndCityProgression(helper, pos, other);
+                    } catch (Exception exception) {
+                        throw new RuntimeException(exception);
+                    } finally {
+                        testChunks.forEach(chunk -> level.getChunkSource().removeRegionTicket(TicketType.FORCED, chunk, 2, chunk));
+                    }
+                }).thenSucceed();
+    }
+
+    private void verifyTriggeredSpawnsAndCityProgression(GameTestHelper helper, BlockPos pos, BlockPos other) throws Exception {
+        ServerLevel level = helper.getLevel();
+        level.getServer().overworld().getDataStorage().set(CobblewardenBoss.MOD_ID + "_cities", new DefeatedCities());
         level.getServer().setDifficulty(Difficulty.NORMAL, true);
         level.getGameRules().getRule(GameRules.RULE_DO_WARDEN_SPAWNING).set(true, level.getServer());
         // Cobbleverse disables ordinary hostile spawning; the shrieker uses its own gamerule.
@@ -201,7 +227,6 @@ public final class BossGameTests implements FabricGameTest {
             helper.assertTrue(!restored.isDefeated("minecraft:the_nether/" + new ChunkPos(pos).x + "/" + new ChunkPos(pos).z),
                     "Equal chunk coordinates in different dimensions must be independent");
 
-            BlockPos other = pos.offset(128, 0, 0);
             arena(level, other);
             installCity(level, other);
             configure(new BossConfig(true, "exploud", "guzzlord", 70));
@@ -238,7 +263,6 @@ public final class BossGameTests implements FabricGameTest {
             captured.getPokemon().setCurrentHealth(0);
             helper.assertTrue(!cities.isDefeated("captured-city"), "A captured boss fainting must not clear a city");
             captured.discard();
-            helper.succeed();
         } finally {
             clear(level, pos);
             configure(BossConfig.DEFAULT);
