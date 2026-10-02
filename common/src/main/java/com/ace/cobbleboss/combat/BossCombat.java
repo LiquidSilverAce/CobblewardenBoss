@@ -15,22 +15,35 @@ import net.minecraft.world.entity.schedule.Activity;
 
 import java.util.Comparator;
 
-/** Policies apply only to this addon's marked, wild Ancient City bosses. */
+/** Capture and battle policies apply to this addon's marked wild replacements. */
 public final class BossCombat {
     public static final String TRIGGER_KEY = CobblewardenBoss.MOD_ID + ":triggering_player";
+    public static final String CITY_ENCOUNTER_KEY = CobblewardenBoss.MOD_ID + ":city_encounter";
     private static final String TARGET_KEY = CobblewardenBoss.MOD_ID + ":controls_target";
     public static final double TARGET_RANGE = 64;
 
     private BossCombat() {}
 
     public static boolean isBoss(PokemonEntity entity) {
-        return entity.getPokemon().isWild() && entity.getTags().contains(BossSpawner.BOSS_TAG)
+        return isReplacement(entity)
                 && !entity.getPokemon().getPersistentData().getString(BossSpawner.CITY_KEY).isEmpty();
     }
 
+    public static boolean isReplacement(PokemonEntity entity) {
+        return entity.getPokemon().isWild() && entity.getTags().contains(BossSpawner.BOSS_TAG);
+    }
+
+    private static boolean isCityEncounter(PokemonEntity entity) {
+        // CITY_KEY also recognizes city bosses saved by older versions of the addon.
+        return entity.getPokemon().getPersistentData().getBoolean(CITY_ENCOUNTER_KEY) || isBoss(entity);
+    }
+
+    public static boolean isUnbattleable(PokemonEntity entity) {
+        return isReplacement(entity) && CobblewardenBoss.config().unbattleableFor(isCityEncounter(entity), false);
+    }
+
     public static boolean usesRealTimeCombat(PokemonEntity entity) {
-        return isBoss(entity) && Platform.isModLoaded("fightorflight")
-                && CobblewardenBoss.config().bossRealTimeCombat();
+        return isUnbattleable(entity) && Platform.isModLoaded("fightorflight");
     }
 
     public static boolean forcesAggression(PokemonEntity entity) {
@@ -56,14 +69,14 @@ public final class BossCombat {
     }
 
     public static void update(PokemonEntity entity) {
-        if (entity.level().isClientSide || !isBoss(entity)) return;
-        boolean uncatchable = CobblewardenBoss.config().bossUncatchable();
+        if (entity.level().isClientSide || !isReplacement(entity)) return;
+        boolean uncatchable = CobblewardenBoss.config().uncatchableFor(isCityEncounter(entity), false);
         if (entity.isUncatchable() != uncatchable) {
             (uncatchable ? UncatchableProperty.INSTANCE.uncatchable() : UncatchableProperty.INSTANCE.catchable())
                     .apply(entity.getPokemon());
         }
-        // This flag is native Cobblemon data and is saved with the entity. Clear it if Reborn is removed.
-        entity.getEntityData().set(PokemonEntity.getUNBATTLEABLE(), usesRealTimeCombat(entity));
+        // Native Cobblemon battle protection works independently of Reborn.
+        entity.getEntityData().set(PokemonEntity.getUNBATTLEABLE(), isUnbattleable(entity));
         var data = entity.getPokemon().getPersistentData();
         if (forcesAggression(entity)) {
             data.putBoolean(TARGET_KEY, true);
@@ -94,8 +107,8 @@ public final class BossCombat {
         for (var actor : event.getBattle().getActors()) {
             for (var pokemon : actor.getPokemonList()) {
                 PokemonEntity entity = pokemon.getOriginalPokemon().getEntity();
-                if (entity != null && usesRealTimeCombat(entity)) {
-                    event.setReason(Component.literal("This Ancient City boss must be fought in the world using Fight or Flight Reborn."));
+                if (entity != null && isUnbattleable(entity)) {
+                    event.setReason(Component.literal("Pokémon battles are disabled for this Warden replacement in the Cobblewarden config."));
                     event.cancel();
                     return;
                 }

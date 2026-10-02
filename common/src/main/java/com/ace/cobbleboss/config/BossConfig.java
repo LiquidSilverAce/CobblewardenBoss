@@ -13,14 +13,23 @@ import java.nio.file.Path;
 import java.util.Set;
 
 public record BossConfig(boolean enabled, String defaultSpecies, String ancientCitySpecies, int pokemonLevel,
-                         boolean bossUncatchable, boolean bossRealTimeCombat, boolean bossAlwaysAggressive) {
+                         boolean defaultUncatchable, boolean defaultUnbattleable,
+                         boolean ancientCityUncatchable, boolean ancientCityUnbattleable, boolean bossAlwaysAggressive) {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Set<String> FIELDS = Set.of("enabled", "defaultSpecies", "ancientCitySpecies", "pokemonLevel",
+            "defaultUncatchable", "defaultUnbattleable", "ancientCityUncatchable", "ancientCityUnbattleable",
             "bossUncatchable", "bossRealTimeCombat", "bossAlwaysAggressive");
-    public static final BossConfig DEFAULT = new BossConfig(true, "exploud", "default", 70);
+    public static final BossConfig DEFAULT = new BossConfig(true, "exploud", "guzzlord", 100);
 
     public BossConfig(boolean enabled, String defaultSpecies, String ancientCitySpecies, int pokemonLevel) {
-        this(enabled, defaultSpecies, ancientCitySpecies, pokemonLevel, true, true, true);
+        this(enabled, defaultSpecies, ancientCitySpecies, pokemonLevel, false, false, true, true, true);
+    }
+
+    /** Compatibility with callers using the previous city-only settings. */
+    public BossConfig(boolean enabled, String defaultSpecies, String ancientCitySpecies, int pokemonLevel,
+                      boolean bossUncatchable, boolean bossRealTimeCombat, boolean bossAlwaysAggressive) {
+        this(enabled, defaultSpecies, ancientCitySpecies, pokemonLevel,
+                false, false, bossUncatchable, bossRealTimeCombat, bossAlwaysAggressive);
     }
 
     public BossConfig {
@@ -38,6 +47,14 @@ public record BossConfig(boolean enabled, String defaultSpecies, String ancientC
     public String speciesFor(boolean ancientCity, boolean bossDefeated) {
         return ancientCity && !bossDefeated && !ancientCitySpecies.equals("default")
                 ? ancientCitySpecies : defaultSpecies;
+    }
+
+    public boolean uncatchableFor(boolean ancientCity, boolean bossDefeated) {
+        return ancientCity && !bossDefeated ? ancientCityUncatchable : defaultUncatchable;
+    }
+
+    public boolean unbattleableFor(boolean ancientCity, boolean bossDefeated) {
+        return ancientCity && !bossDefeated ? ancientCityUnbattleable : defaultUnbattleable;
     }
 
     public static BossConfig load(Path path) throws IOException {
@@ -86,8 +103,10 @@ public record BossConfig(boolean enabled, String defaultSpecies, String ancientC
         }
         return new BossConfig(enabled, string(object, "defaultSpecies", DEFAULT.defaultSpecies),
                 string(object, "ancientCitySpecies", DEFAULT.ancientCitySpecies), level,
-                bool(object, "bossUncatchable", DEFAULT.bossUncatchable),
-                bool(object, "bossRealTimeCombat", DEFAULT.bossRealTimeCombat),
+                bool(object, "defaultUncatchable", DEFAULT.defaultUncatchable),
+                bool(object, "defaultUnbattleable", DEFAULT.defaultUnbattleable),
+                bool(object, "ancientCityUncatchable", bool(object, "bossUncatchable", DEFAULT.ancientCityUncatchable)),
+                bool(object, "ancientCityUnbattleable", bool(object, "bossRealTimeCombat", DEFAULT.ancientCityUnbattleable)),
                 bool(object, "bossAlwaysAggressive", DEFAULT.bossAlwaysAggressive));
     }
 

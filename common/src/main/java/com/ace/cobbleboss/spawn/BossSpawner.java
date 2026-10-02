@@ -82,11 +82,12 @@ public final class BossSpawner {
         properties.setLevel(config.pokemonLevel());
         PokemonEntity entity = properties.createEntity(level);
         entity.addTag(BOSS_TAG);
+        entity.getPokemon().getPersistentData().putBoolean(BossCombat.CITY_ENCOUNTER_KEY, city != null && !defeated);
         if (city != null && (species.equals("giratina") || species.equals("guzzlord"))) {
             entity.getPokemon().getPersistentData().putString(CITY_KEY, city);
             if (triggeringPlayer != null) entity.getPokemon().getPersistentData().putUUID(BossCombat.TRIGGER_KEY, triggeringPlayer);
-            BossCombat.update(entity);
         }
+        BossCombat.update(entity);
 
         BlockPos.MutableBlockPos candidate = shriekerPos.mutable();
         for (int attempt = 0; attempt < SPAWN_ATTEMPTS; attempt++) {

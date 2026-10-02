@@ -78,7 +78,10 @@ public final class BossGameTests implements FabricGameTest {
                 helper.assertTrue(pokemon(level, pos).isEmpty(), "Spawned before the fourth warning");
             }
             respond(level, shrieker, 4);
-            helper.assertTrue(!expectSpecies(helper, pos, "exploud").isUncatchable(), "Ordinary replacements remain catchable");
+            PokemonEntity regular = expectSpecies(helper, pos, "exploud");
+            helper.assertTrue(!regular.isUncatchable()
+                            && !regular.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                    "Ordinary replacements default to catchable and battleable");
             helper.assertTrue(wardens(level, pos).isEmpty(), "A vanilla Warden leaked through");
             helper.assertTrue(WardenSpawnTracker.tryWarn(level, pos, helper.makeMockServerPlayerInLevel()).isEmpty(),
                     "Replacement must suppress further warnings like a nearby Warden");
@@ -138,6 +141,21 @@ public final class BossGameTests implements FabricGameTest {
             installCity(level, pos);
             String firstCity = BossSpawner.ancientCityAt(level, pos);
             helper.assertTrue(firstCity != null, "Actual structure bounds must identify an Ancient City");
+            configure(BossConfig.DEFAULT);
+            respond(level, shrieker, 4);
+            PokemonEntity defaultCityBoss = expectSpecies(helper, pos, "guzzlord");
+            helper.assertTrue(defaultCityBoss.isUncatchable()
+                            && defaultCityBoss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                    "Default city Guzzlord must have both restrictions without requiring Reborn");
+            clear(level, pos);
+            configure(new BossConfig(true, "dusknoir", "default", 70));
+            respond(level, shrieker, 4);
+            PokemonEntity defaultCitySpecies = expectSpecies(helper, pos, "dusknoir");
+            helper.assertTrue(defaultCitySpecies.isUncatchable()
+                            && defaultCitySpecies.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                    "Uncleared city restrictions must also apply when ancientCitySpecies is default");
+            clear(level, pos);
+            configure(new BossConfig(true, "dusknoir", "giratina", 70));
             ServerPlayer trigger = helper.makeMockServerPlayerInLevel();
             trigger.setGameMode(GameType.SURVIVAL);
             trigger.moveTo(pos.getX() + 12, pos.getY(), pos.getZ());
@@ -158,8 +176,9 @@ public final class BossGameTests implements FabricGameTest {
             helper.assertTrue(giratina.save(savedBoss), "Boss must be saveable");
             Entity reloaded = EntityType.loadEntityRecursive(savedBoss, level, entity -> entity);
             helper.assertTrue(reloaded instanceof PokemonEntity && reloaded.getTags().contains(BossSpawner.BOSS_TAG)
-                            && firstCity.equals(((PokemonEntity) reloaded).getPokemon().getPersistentData().getString(BossSpawner.CITY_KEY)),
-                    "Boss markers must survive chunk save/load");
+                            && firstCity.equals(((PokemonEntity) reloaded).getPokemon().getPersistentData().getString(BossSpawner.CITY_KEY))
+                            && ((PokemonEntity) reloaded).getPokemon().getPersistentData().getBoolean(BossCombat.CITY_ENCOUNTER_KEY),
+                    "Boss and encounter-category markers must survive chunk save/load");
             helper.assertTrue(((PokemonEntity) reloaded).isUncatchable()
                             && trigger.getUUID().equals(((PokemonEntity) reloaded).getPokemon().getPersistentData().getUUID(BossCombat.TRIGGER_KEY)),
                     "Capture protection and trigger identity must survive saving");
@@ -171,7 +190,10 @@ public final class BossGameTests implements FabricGameTest {
             helper.assertTrue(cities.isDefeated(firstCity), "A boss faint must clear its city");
             clear(level, pos);
             respond(level, shrieker, 4);
-            expectSpecies(helper, pos, "dusknoir");
+            PokemonEntity fallback = expectSpecies(helper, pos, "dusknoir");
+            helper.assertTrue(!fallback.isUncatchable()
+                            && !fallback.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                    "Cleared cities must use regular restrictions");
             clear(level, pos);
 
             DefeatedCities restored = DefeatedCities.load(cities.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
@@ -226,18 +248,17 @@ public final class BossGameTests implements FabricGameTest {
     private static void verifyCombat(GameTestHelper helper, PokemonEntity boss, ServerPlayer trigger) throws Exception {
         boolean reborn = Platform.isModLoaded("fightorflight");
         helper.assertTrue(boss.isUncatchable(), "Boss capture protection must default to on");
-        if (!reborn) {
-            boss.getEntityData().set(PokemonEntity.getUNBATTLEABLE(), true);
-            boss.tick(); // Simulate loading a boss after removing Reborn.
-        }
-        helper.assertTrue(boss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()) == reborn,
-                "Open-world-only defaults on with Reborn, but must allow battles without it");
+        boss.getEntityData().set(PokemonEntity.getUNBATTLEABLE(), false);
+        boss.tick();
+        helper.assertTrue(boss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                "City battle restrictions must work independently of Reborn");
         ServerPlayer nearer = helper.makeMockServerPlayerInLevel();
         nearer.setGameMode(GameType.SURVIVAL);
         nearer.moveTo(boss.getX() + 3, boss.getY(), boss.getZ());
         trigger.moveTo(boss.getX() + 12, boss.getY(), boss.getZ());
         try {
             BossCombat.update(boss);
+            helper.assertTrue(!boss.canBattle(trigger), "Native battle challenge must be rejected with either runtime");
             helper.assertTrue(BossCombat.chooseTarget(boss) == trigger, "Trigger must take priority over a nearer player");
             if (reborn) {
                 helper.assertTrue(boss.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) == trigger,
@@ -291,7 +312,7 @@ public final class BossGameTests implements FabricGameTest {
             var battle = new PokemonBattle(new BattleFormat(), new BattleSide(actor), new BattleSide(opponent));
             var event = new BattleStartedEvent.Pre(battle, null);
             CobblemonEvents.BATTLE_STARTED_PRE.post(event);
-            helper.assertTrue(event.isCanceled() == reborn, "Programmatic battles must respect the combat restriction");
+            helper.assertTrue(event.isCanceled(), "Programmatic battles must respect the combat restriction without Reborn");
             trigger.setGameMode(GameType.CREATIVE);
             BossCombat.update(boss);
             helper.assertTrue(BossCombat.chooseTarget(boss) == nearer, "Unavailable trigger must fall back to the nearest player");
@@ -303,10 +324,69 @@ public final class BossGameTests implements FabricGameTest {
             helper.assertTrue(!boss.isUncatchable() && !boss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
                     "Capture and regular battles must be independently configurable");
             if (reborn) helper.assertTrue(boss.getTarget() == null, "Disabling forced aggression must release its target");
+            verifyRestrictionToggles(helper, boss, trigger, nearer);
             configure(new BossConfig(true, "dusknoir", "giratina", 70));
             BossCombat.update(boss);
         } finally {
             nearer.discard();
+        }
+    }
+
+    private static void verifyRestrictionToggles(GameTestHelper helper, PokemonEntity cityBoss,
+                                                 ServerPlayer player, ServerPlayer opponent) throws Exception {
+        PokemonProperties properties = new PokemonProperties();
+        properties.setSpecies("exploud");
+        PokemonEntity regular = properties.createEntity(helper.getLevel());
+        regular.addTag(BossSpawner.BOSS_TAG);
+        regular.moveTo(cityBoss.getX() + 8, cityBoss.getY(), cityBoss.getZ());
+        helper.assertTrue(helper.getLevel().addFreshEntity(regular), "Could not add the regular replacement to the test world");
+        regular.getPokemon().setState(new SentOutState(regular));
+        PokemonEntity ordinary = properties.createEntity(helper.getLevel());
+        PokemonEntity owned = properties.createEntity(helper.getLevel());
+        owned.addTag(BossSpawner.BOSS_TAG);
+        owned.getPokemon().getPersistentData().putBoolean(BossCombat.CITY_ENCOUNTER_KEY, true);
+        PlayerPartyStore party = new PlayerPartyStore(player.getUUID());
+        helper.assertTrue(party.add(owned.getPokemon()), "Could not prepare a captured replacement");
+        owned.getPokemon().setState(new SentOutState(owned));
+        try {
+            for (int flags = 0; flags < 16; flags++) {
+                boolean regularCapture = (flags & 1) != 0, regularBattle = (flags & 2) != 0;
+                boolean cityCapture = (flags & 4) != 0, cityBattle = (flags & 8) != 0;
+                configure(new BossConfig(true, "dusknoir", "giratina", 70,
+                        regularCapture, regularBattle, cityCapture, cityBattle, false));
+                BossCombat.update(regular);
+                BossCombat.update(cityBoss);
+                BossCombat.update(ordinary);
+                BossCombat.update(owned);
+                helper.assertTrue(regular.isUncatchable() == regularCapture
+                                && regular.getEntityData().get(PokemonEntity.getUNBATTLEABLE()) == regularBattle,
+                        "Regular restrictions must toggle independently");
+                helper.assertTrue(cityBoss.isUncatchable() == cityCapture
+                                && cityBoss.getEntityData().get(PokemonEntity.getUNBATTLEABLE()) == cityBattle,
+                        "City restrictions must toggle independently from regular restrictions");
+                helper.assertTrue(!ordinary.isUncatchable()
+                                && !ordinary.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                        "Unmarked wild Pokémon must remain unaffected");
+                helper.assertTrue(!owned.isUncatchable() && !BossCombat.isUnbattleable(owned)
+                                && !owned.getEntityData().get(PokemonEntity.getUNBATTLEABLE()),
+                        "Player-owned replacements must remain unaffected");
+                for (PokemonEntity entity : List.of(regular, cityBoss)) {
+                    boolean blocked = entity == regular ? regularBattle : cityBattle;
+                    helper.assertTrue(entity.canBattle(player) != blocked,
+                            "Native Pokémon challenges must follow the selected battle setting");
+                    var actor = new PlayerBattleActor(player.getUUID(), List.of(BattlePokemon.Companion.playerOwned(entity.getPokemon())));
+                    var other = new PlayerBattleActor(opponent.getUUID(), List.of());
+                    var event = new BattleStartedEvent.Pre(new PokemonBattle(new BattleFormat(), new BattleSide(actor), new BattleSide(other)), null);
+                    CobblemonEvents.BATTLE_STARTED_PRE.post(event);
+                    helper.assertTrue(event.isCanceled() == blocked,
+                            "Programmatic battle cancellation must follow each independent battle setting (flags="
+                                    + flags + ", regular=" + (entity == regular) + ")");
+                }
+            }
+        } finally {
+            regular.discard();
+            ordinary.discard();
+            owned.discard();
         }
     }
 
@@ -349,7 +429,7 @@ public final class BossGameTests implements FabricGameTest {
         PokemonEntity entity = spawned.getFirst();
         helper.assertTrue(entity.getPokemon().getSpecies().getResourceIdentifier().getPath().equals(species),
                 "Expected " + species + ", got " + entity.getPokemon().getSpecies().getName());
-        helper.assertTrue(entity.getPokemon().getLevel() == 70, "Configured level was not applied");
+        helper.assertTrue(entity.getPokemon().getLevel() == CobblewardenBoss.config().pokemonLevel(), "Configured level was not applied");
         helper.assertTrue(helper.getLevel().noCollision(entity), "Spawned Pokémon intersects a block or entity");
         return entity;
     }
